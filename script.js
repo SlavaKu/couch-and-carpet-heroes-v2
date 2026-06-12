@@ -73,7 +73,9 @@ if (calculator) {
   const panelsRoot = calculator.querySelector("[data-calculator-panels]");
   const summaryRoot = calculator.querySelector("[data-summary]");
   const alertRoot = calculator.querySelector("[data-calculator-alert]");
+  const calculatorTotalRoot = calculator.querySelector("[data-calculator-total]");
   const whatsappButton = calculator.querySelector("[data-whatsapp]");
+  const sendEstimateLinks = document.querySelectorAll("[data-send-estimate]");
   const mobileTotal = document.querySelector("[data-mobile-total]");
 
   const phone = "16505196607";
@@ -83,6 +85,7 @@ if (calculator) {
   const pricingData = {
     categories: [
       { key: "carpet", label: "Carpet Cleaning" },
+      { key: "stairs", label: "Stairs Cleaning" },
       { key: "upholstery", label: "Upholstery Cleaning" },
       { key: "mattress", label: "Mattress Cleaning" },
       { key: "rug", label: "Area Rug Cleaning" }
@@ -124,6 +127,13 @@ if (calculator) {
         custom: { label: "Custom number of steps", steps: null }
       },
       stairPrice: 6
+    },
+    stairs: {
+      countTypes: {
+        flights: { label: "Number of flights", stepsPerUnit: 14 },
+        steps: { label: "Exact number of steps", stepsPerUnit: 1 }
+      },
+      pricePerStep: 6
     },
     upholstery: {
       furnitureTypes: {
@@ -189,6 +199,7 @@ if (calculator) {
     selected: new Set(),
     items: {
       carpet: [],
+      stairs: [],
       upholstery: [],
       mattress: [],
       rug: []
@@ -199,6 +210,7 @@ if (calculator) {
   const money = (value) => `$${Math.round(value).toLocaleString("en-US")}`;
   const round10 = (value) => Math.round(value / 10) * 10;
   const qty = (value) => Math.max(1, Number.parseInt(value, 10) || 1);
+  const quantityValue = (value) => value === "" ? "" : qty(value);
   const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (char) => ({
     "&": "&amp;",
     "<": "&lt;",
@@ -209,8 +221,9 @@ if (calculator) {
 
   const defaults = {
     carpet: () => ({ id: uid(), areaType: "standard", quantity: 1, level: "deep", stairs: "none", customSteps: 1 }),
+    stairs: () => ({ id: uid(), countType: "flights", quantity: 1, level: "deep" }),
     upholstery: () => ({ id: uid(), furnitureType: "sofa_3", quantity: 1, fabric: "unsure", level: "deep", odor: "none" }),
-    mattress: () => ({ id: uid(), size: "queen", side: "one", level: "deep", issue: "none" }),
+    mattress: () => ({ id: uid(), size: "queen", quantity: 1, side: "one", level: "deep", issue: "none" }),
     rug: () => ({ id: uid(), size: "medium", material: "unsure", level: "deep" })
   };
 
@@ -235,7 +248,15 @@ if (calculator) {
   const quantityField = (value) => `
     <div class="field">
       <label>Quantity
-        <input data-field="quantity" type="number" min="1" step="1" value="${qty(value)}">
+        <input data-field="quantity" type="number" inputmode="numeric" pattern="[0-9]*" min="1" step="1" value="${quantityValue(value)}">
+      </label>
+    </div>
+  `;
+
+  const numberField = (label, field, value) => `
+    <div class="field">
+      <label>${label}
+        <input data-field="${field}" type="number" inputmode="numeric" pattern="[0-9]*" min="1" step="1" value="${quantityValue(value)}">
       </label>
     </div>
   `;
@@ -258,17 +279,36 @@ if (calculator) {
     </fieldset>
   `;
 
+  const addButtonText = (category) => ({
+    carpet: "+ Add another carpet area",
+    stairs: "+ Add another stair area",
+    upholstery: "+ Add another furniture item",
+    mattress: "+ Add another mattress",
+    rug: "+ Add another rug"
+  })[category];
+
   const renderCategories = () => {
     categoryPicker.innerHTML = pricingData.categories.map((category) => `
-      <label class="category-option">
-        <input type="checkbox" value="${category.key}" ${state.selected.has(category.key) ? "checked" : ""}>
-        <span>${category.label}</span>
-      </label>
+      <section class="category-accordion ${state.selected.has(category.key) ? "is-active" : ""}">
+        <button class="category-toggle" type="button" data-category-toggle="${category.key}" aria-expanded="${state.selected.has(category.key)}">
+          <span>
+            <strong>${category.label}</strong>
+            <small>${state.selected.has(category.key) ? "Choose details below." : "Tap to add and customize."}</small>
+          </span>
+          <em aria-hidden="true">${state.selected.has(category.key) ? "-" : "+"}</em>
+        </button>
+        ${state.selected.has(category.key) ? `
+          <div class="category-panel" data-panel="${category.key}">
+            <div class="item-stack">${state.items[category.key].map((item, index) => itemCard(category.key, item, index)).join("")}</div>
+            <button class="add-btn" type="button" data-add="${category.key}">${addButtonText(category.key)}</button>
+          </div>
+        ` : ""}
+      </section>
     `).join("");
   };
 
   const itemCard = (category, item, index) => {
-    const labels = { carpet: "Carpet area", upholstery: "Furniture item", mattress: "Mattress", rug: "Area rug" };
+    const labels = { carpet: "Carpet area", stairs: "Stairs area", upholstery: "Furniture item", mattress: "Mattress", rug: "Area rug" };
     const remove = state.items[category].length > 1 ? `<button class="remove-btn" type="button" data-remove="${item.id}">Remove</button>` : "";
     let fields = "";
 
@@ -277,12 +317,15 @@ if (calculator) {
         ${selectField("Area type", "areaType", pricingData.carpet.areaTypes, item.areaType)}
         ${quantityField(item.quantity)}
         ${levelField(item.id, item.level)}
-        ${selectField("Stairs", "stairs", pricingData.carpet.stairs, item.stairs)}
-        <div class="field ${item.stairs === "custom" ? "" : "hidden"}">
-          <label>Custom number of steps
-            <input data-field="customSteps" type="number" min="1" step="1" value="${qty(item.customSteps)}">
-          </label>
-        </div>
+      `;
+    }
+
+    if (category === "stairs") {
+      fields = `
+        ${selectField("Count by", "countType", pricingData.stairs.countTypes, item.countType)}
+        ${numberField(item.countType === "steps" ? "Number of steps" : "Number of flights", "quantity", item.quantity)}
+        <p class="helper-note field-full">One flight is estimated as about 14 steps. Choose exact steps if you know the number.</p>
+        ${levelField(item.id, item.level)}
       `;
     }
 
@@ -299,6 +342,7 @@ if (calculator) {
     if (category === "mattress") {
       fields = `
         ${selectField("Mattress size", "size", pricingData.mattress.sizes, item.size)}
+        ${quantityField(item.quantity)}
         ${selectField("Cleaning side", "side", pricingData.mattress.sides, item.side)}
         ${selectField("Issue", "issue", pricingData.mattress.issues, item.issue)}
         ${levelField(item.id, item.level)}
@@ -323,26 +367,7 @@ if (calculator) {
   };
 
   const renderPanels = () => {
-    const meta = {
-      carpet: ["Carpet Cleaning", "+ Add another carpet area"],
-      upholstery: ["Upholstery Cleaning", "+ Add another furniture item"],
-      mattress: ["Mattress Cleaning", "+ Add another mattress"],
-      rug: ["Area Rug Cleaning", "+ Add another rug"]
-    };
-
-    panelsRoot.innerHTML = Array.from(state.selected).map((category) => `
-      <section class="calculator-panel" data-panel="${category}">
-        <div class="panel-head">
-          <span class="step-badge">2</span>
-          <div>
-            <h3>${meta[category][0]}</h3>
-            <p>Add each item separately for a clearer estimated range.</p>
-          </div>
-        </div>
-        <div class="item-stack">${state.items[category].map((item, index) => itemCard(category, item, index)).join("")}</div>
-        <button class="add-btn" type="button" data-add="${category}">${meta[category][1]}</button>
-      </section>
-    `).join("");
+    panelsRoot.innerHTML = "";
   };
 
   function calculateCarpetTotal() {
@@ -355,15 +380,24 @@ if (calculator) {
       const amount = area.price * level.multiplier * count;
       total += amount;
       lines.push({ label: `${area.label} x${count} - ${level.shortLabel}`, amount });
-      const stair = pricingData.carpet.stairs[item.stairs];
-      const steps = item.stairs === "custom" ? qty(item.customSteps) : stair.steps;
-      if (steps > 0) {
-        const stairAmount = steps * pricingData.carpet.stairPrice;
-        total += stairAmount;
-        lines.push({ label: `Stairs, ${steps} steps`, amount: stairAmount });
-      }
     });
     return { title: "Carpet Cleaning", total, lines, hasCustom: false };
+  }
+
+  function calculateStairsTotal() {
+    let total = 0;
+    const lines = [];
+    state.items.stairs.forEach((item) => {
+      const countType = pricingData.stairs.countTypes[item.countType];
+      const count = qty(item.quantity);
+      const level = pricingData.cleaningLevels[item.level];
+      const steps = count * countType.stepsPerUnit;
+      const amount = steps * pricingData.stairs.pricePerStep * level.multiplier;
+      total += amount;
+      const unitLabel = item.countType === "steps" ? `${count} steps` : `${count} flight${count === 1 ? "" : "s"} / approx. ${steps} steps`;
+      lines.push({ label: `${unitLabel} - ${level.shortLabel}`, amount });
+    });
+    return { title: "Stairs Cleaning", total, lines, hasCustom: false };
   }
 
   function calculateUpholsteryTotal() {
@@ -390,9 +424,10 @@ if (calculator) {
       const side = pricingData.mattress.sides[item.side];
       const level = pricingData.cleaningLevels[item.level];
       const issue = pricingData.mattress.issues[item.issue];
-      const amount = (size.price * side.multiplier * level.multiplier) + issue.price;
+      const count = qty(item.quantity);
+      const amount = ((size.price * side.multiplier * level.multiplier) + issue.price) * count;
       total += amount;
-      lines.push({ label: `${size.label} - ${side.label}, ${level.shortLabel}${issue.price ? `, ${issue.label}` : ""}`, amount });
+      lines.push({ label: `${size.label} x${count} - ${side.label}, ${level.shortLabel}${issue.price ? `, ${issue.label}` : ""}`, amount });
     });
     return { title: "Mattress Cleaning", total, lines, hasCustom: false };
   }
@@ -420,6 +455,7 @@ if (calculator) {
   const calculateEstimate = () => {
     const categories = [];
     if (state.selected.has("carpet")) categories.push(calculateCarpetTotal());
+    if (state.selected.has("stairs")) categories.push(calculateStairsTotal());
     if (state.selected.has("upholstery")) categories.push(calculateUpholsteryTotal());
     if (state.selected.has("mattress")) categories.push(calculateMattressTotal());
     if (state.selected.has("rug")) categories.push(calculateRugTotal());
@@ -440,10 +476,13 @@ if (calculator) {
     if (estimate.categories.length === 0) {
       summaryRoot.innerHTML = `<div class="summary-empty">Select one or more residential cleaning services to build your estimated quote.</div><p class="summary-note">Photos help us confirm the exact price before arrival.</p>`;
       if (mobileTotal) mobileTotal.textContent = "Text for quote";
+      if (calculatorTotalRoot) calculatorTotalRoot.textContent = "Estimated price: select a service";
+      updateEstimateLinks();
       return;
     }
 
     const totalText = estimate.total ? `${money(estimate.low)} - ${money(estimate.high)}` : "Custom quote";
+    const simpleTotalText = estimate.total ? `Estimated price: from ${money(estimate.low)}` : "Estimated price: custom quote";
     summaryRoot.innerHTML = `
       ${estimate.categories.map((category) => `
         <div class="summary-category">
@@ -461,26 +500,40 @@ if (calculator) {
       <p class="summary-note">Photos help us confirm the exact price before arrival.</p>
     `;
     if (mobileTotal) mobileTotal.textContent = totalText;
+    if (calculatorTotalRoot) calculatorTotalRoot.textContent = simpleTotalText;
+    updateEstimateLinks();
   }
 
-  function buildWhatsAppMessage() {
+  function buildEstimateMessage() {
     const estimate = calculateEstimate();
-    const range = estimate.total ? `${money(estimate.low)} - ${money(estimate.high)}` : "Custom quote required";
+    if (estimate.categories.length === 0) {
+      return "Hi, I'm interested in cleaning services. Could you please help me with an estimate? I can send photos or more details if needed.";
+    }
+    const range = estimate.total ? `from ${money(estimate.low)} (${money(estimate.low)} - ${money(estimate.high)})` : "custom quote required";
     const items = estimate.categories.flatMap((category) => [
       `${category.title}:`,
       ...category.lines.map((line) => `- ${line.label}: ${line.custom ? "Custom quote required" : money(line.amount)}`)
     ]);
     return [
-      "Hello, I used your website estimate calculator.",
+      "Hi, I'd like to get an estimate for cleaning.",
       "",
-      "Selected services:",
+      "I selected:",
       ...items,
       "",
-      "Estimated range:",
+      "Estimated price:",
       range,
       "",
-      "I would like an exact quote."
+      "I can send photos and more details if needed."
     ].join("\n");
+  }
+
+  const buildWhatsAppMessage = () => buildEstimateMessage();
+  const buildSmsHref = () => `sms:+${phone}?body=${encodeURIComponent(buildEstimateMessage())}`;
+
+  function updateEstimateLinks() {
+    sendEstimateLinks.forEach((link) => {
+      link.href = buildSmsHref();
+    });
   }
 
   const renderAll = () => {
@@ -489,27 +542,30 @@ if (calculator) {
     renderEstimateSummary();
   };
 
-  categoryPicker.addEventListener("change", (event) => {
-    const input = event.target.closest("input[type='checkbox']");
-    if (!input) return;
-    if (input.checked) {
-      state.selected.add(input.value);
-      ensureItem(input.value);
+  categoryPicker.addEventListener("click", (event) => {
+    const toggle = event.target.closest("[data-category-toggle]");
+    if (!toggle) return;
+    const category = toggle.dataset.categoryToggle;
+    if (state.selected.has(category)) {
+      state.selected.delete(category);
     } else {
-      state.selected.delete(input.value);
+      state.selected.add(category);
+      ensureItem(category);
     }
     renderAll();
   });
 
-  panelsRoot.addEventListener("click", (event) => {
+  categoryPicker.addEventListener("click", (event) => {
     const add = event.target.closest("[data-add]");
     const remove = event.target.closest("[data-remove]");
     if (add) {
+      event.stopPropagation();
       const category = add.dataset.add;
       state.items[category].push(defaults[category]());
       renderAll();
     }
     if (remove) {
+      event.stopPropagation();
       const card = remove.closest(".item-card");
       const category = card.dataset.category;
       state.items[category] = state.items[category].filter((item) => item.id !== remove.dataset.remove);
@@ -518,36 +574,38 @@ if (calculator) {
     }
   });
 
-  panelsRoot.addEventListener("input", (event) => {
+  categoryPicker.addEventListener("focusin", (event) => {
+    if (event.target.matches("input[type='number']")) {
+      setTimeout(() => event.target.select(), 0);
+    }
+  });
+
+  categoryPicker.addEventListener("input", (event) => {
     const field = event.target.dataset.field;
     if (!field) return;
     const card = event.target.closest(".item-card");
     const item = state.items[card.dataset.category].find((entry) => entry.id === card.dataset.item);
     if (!item) return;
-    item[field] = event.target.type === "number" ? qty(event.target.value) : event.target.value;
-    if (event.target.type === "number" && Number(event.target.value) < 1) event.target.value = 1;
+    item[field] = event.target.type === "number" ? event.target.value.replace(/[^\d]/g, "") : event.target.value;
+    if (event.target.type === "number" && event.target.value !== item[field]) event.target.value = item[field];
     renderEstimateSummary();
   });
 
-  panelsRoot.addEventListener("change", (event) => {
+  categoryPicker.addEventListener("change", (event) => {
     const field = event.target.dataset.field;
     if (!field) return;
     const card = event.target.closest(".item-card");
     const item = state.items[card.dataset.category].find((entry) => entry.id === card.dataset.item);
     if (!item) return;
     item[field] = event.target.type === "number" ? qty(event.target.value) : event.target.value;
-    if (card.dataset.category === "carpet" && field === "stairs") {
-      renderPanels();
+    if (event.target.type === "number") event.target.value = item[field];
+    if (card.dataset.category === "stairs" && field === "countType") {
+      renderCategories();
     }
     renderEstimateSummary();
   });
 
   whatsappButton.addEventListener("click", () => {
-    if (state.selected.size === 0) {
-      alertRoot.textContent = "Please select at least one cleaning service first.";
-      setTimeout(() => { alertRoot.textContent = ""; }, 4000);
-      return;
-    }
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(buildWhatsAppMessage())}`, "_blank", "noopener");
   });
 
