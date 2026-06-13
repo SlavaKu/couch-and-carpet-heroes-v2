@@ -82,10 +82,10 @@ if (calculator) {
   const mobileTotal = document.querySelector("[data-mobile-total]");
 
   const phone = "16505196607";
-  const email = "info@cleanpro.com";
   const minimumServiceCall = 120;
   const supabaseRestUrl = "https://gxtrpycepqnecoyxnonl.supabase.co/rest/v1";
   const supabasePublishableKey = "sb_publishable_Sx1dm7TzcIntHfB6lrFctA_xoKF_EYU";
+  const formspreeEndpoint = "https://formspree.io/f/xkoapbkw";
 
   // Edit prices here when Couch and Carpet Heroes updates the service menu.
   const pricingData = {
@@ -575,17 +575,12 @@ if (calculator) {
     ].filter((line) => line !== null).join("\n");
   }
 
-  const isMobileDevice = () => /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
-    || (/Macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
-  const buildSmsHref = () => `sms:+${phone}?body=${encodeURIComponent(buildEstimateMessage("sms"))}`;
-  const buildEmailHref = () => `mailto:${email}?subject=${encodeURIComponent("Estimate Request")}&body=${encodeURIComponent(buildEstimateMessage("email", "modal"))}`;
   const buildWhatsAppMessage = () => [
     buildEstimateMessage("sms"),
     "",
     "I will send photos for an exact quote."
   ].join("\n");
   const buildWhatsAppHref = () => `https://wa.me/${phone}?text=${encodeURIComponent(buildWhatsAppMessage())}`;
-  const buildEstimateHref = () => buildSmsHref();
 
   const openExternalHref = (href) => {
     const link = document.createElement("a");
@@ -640,6 +635,55 @@ if (calculator) {
     }
   }
 
+  const calculatorDetails = () => {
+    const estimate = calculateEstimate();
+    return {
+      selectedServices: estimate.categories.map((category) => category.title).join(", ") || "Not selected",
+      estimatedTotal: estimate.total ? `${money(estimate.low)} - ${money(estimate.high)}` : "Custom quote required",
+      fullSummary: estimate.categories.flatMap((category) => [
+        `${category.title}:`,
+        ...category.lines.map((line) => `- ${line.label}: ${line.custom ? "Custom quote required" : money(line.amount)}`),
+        `Subtotal: ${category.total ? money(category.total) : "Custom quote"}`
+      ]).join("\n")
+    };
+  };
+
+  async function submitEstimateToFormspree() {
+    const details = calculatorDetails();
+    const payload = {
+      Name: desktopEstimateForm.elements.name.value.trim(),
+      Phone: desktopEstimateForm.elements.phone.value.trim(),
+      Email: desktopEstimateForm.elements.email.value.trim(),
+      City: desktopEstimateForm.elements.city.value.trim(),
+      Service: desktopEstimateForm.elements.service.value.trim(),
+      "Additional Notes": desktopEstimateForm.elements.notes.value.trim(),
+      "Estimated Total": details.estimatedTotal,
+      "Full estimate summary": details.fullSummary,
+      "Selected services": details.selectedServices,
+      Quantities: details.fullSummary,
+      "Calculator details": details.fullSummary
+    };
+
+    const response = await fetch(formspreeEndpoint, {
+      method: "POST",
+      headers: {
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Formspree submission failed", {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorText
+      });
+      throw new Error(`Formspree request failed: ${response.status}`);
+    }
+  }
+
   async function notifyBusinessOwnerLater(_requestPayload) {
     // Future owner notifications belong in a backend/Supabase Edge Function.
     // Do not place email, SMS, Telegram bot tokens, or Supabase secret keys in browser code.
@@ -663,8 +707,9 @@ if (calculator) {
 
   function updateEstimateLinks() {
     sendEstimateLinks.forEach((link) => {
-      link.href = buildEstimateHref();
+      link.href = "#estimate";
     });
+    textPhotosEstimateLink?.setAttribute("href", buildWhatsAppHref());
   }
 
   const renderAll = () => {
@@ -740,15 +785,6 @@ if (calculator) {
     console.log(`${label} clicked`);
     updateEstimateLinks();
     event.preventDefault();
-    if (isMobileDevice()) {
-      try {
-        await saveEstimateRequest("page");
-      } catch (error) {
-        console.error("Estimate request was not saved before SMS opened.", error);
-      }
-      window.location.href = buildSmsHref();
-      return;
-    }
     openEstimateModal();
   };
 
@@ -777,14 +813,19 @@ if (calculator) {
     }
     estimateFormAlert.textContent = "Saving your request...";
     try {
-      await saveEstimateRequest("modal");
+      const supabaseSave = saveEstimateRequest("modal").catch((error) => {
+        console.error("Estimate request was not saved to Supabase.", error);
+      });
+      await submitEstimateToFormspree();
+      await supabaseSave;
       await notifyBusinessOwnerLater(buildSupabasePayload("modal"));
-      estimateFormAlert.textContent = "Thank you! Your estimate request has been sent.";
+      closeEstimateModal();
       desktopEstimateForm.reset();
-      setTimeout(closeEstimateModal, 1800);
+      alertRoot.textContent = "Thank you! We received your request and will contact you shortly.";
+      setTimeout(() => { alertRoot.textContent = ""; }, 5000);
     } catch (error) {
-      estimateFormAlert.textContent = "We could not save the request. Please try again or text us directly.";
-      console.error("Estimate request was not saved.", error);
+      estimateFormAlert.textContent = "We could not submit the request. Please try again or text us directly.";
+      console.error("Estimate request was not submitted.", error);
     }
   });
 
