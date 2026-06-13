@@ -75,9 +75,10 @@ if (calculator) {
   const alertRoot = calculator.querySelector("[data-calculator-alert]");
   const calculatorTotalRoot = calculator.querySelector("[data-calculator-total]");
   const sendEstimateLinks = document.querySelectorAll("[data-send-estimate]");
-  const estimateModal = calculator.querySelector("[data-estimate-modal]");
-  const desktopEstimateForm = calculator.querySelector("[data-desktop-estimate-form]");
-  const estimateFormAlert = calculator.querySelector("[data-estimate-form-alert]");
+  const estimateModal = document.querySelector("[data-estimate-modal]");
+  const desktopEstimateForm = document.querySelector("[data-desktop-estimate-form]");
+  const estimateFormAlert = document.querySelector("[data-estimate-form-alert]");
+  const textPhotosEstimateLink = document.querySelector(".summary-actions .btn-secondary");
   const mobileTotal = document.querySelector("[data-mobile-total]");
 
   const phone = "16505196607";
@@ -515,7 +516,6 @@ if (calculator) {
     const customerPhone = source === "modal" ? scope?.elements.phone?.value.trim() : document.getElementById("phone")?.value.trim();
     const emailValue = source === "modal" ? scope?.elements.email?.value.trim() : "";
     const city = source === "modal" ? scope?.elements.city?.value.trim() : "";
-    const address = source === "modal" ? scope?.elements.address?.value.trim() : "";
     const service = source === "modal" ? scope?.elements.service?.value.trim() : "";
     const details = source === "modal" ? scope?.elements.notes?.value.trim() : document.getElementById("message")?.value.trim();
     return [
@@ -523,7 +523,6 @@ if (calculator) {
       customerPhone ? `Phone: ${customerPhone}` : "",
       emailValue ? `Email: ${emailValue}` : "",
       city ? `City: ${city}` : "",
-      address ? `Street address: ${address}` : "",
       service ? `Service: ${service}` : "",
       details ? `${source === "modal" ? "Additional notes" : "Details"}: ${details}` : ""
     ].filter(Boolean);
@@ -576,10 +575,22 @@ if (calculator) {
     ].filter((line) => line !== null).join("\n");
   }
 
-  const isMobileDevice = () => window.matchMedia("(pointer: coarse)").matches || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+  const isMobileDevice = () => /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
+    || (/Macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
   const buildSmsHref = () => `sms:+${phone}?body=${encodeURIComponent(buildEstimateMessage("sms"))}`;
   const buildEmailHref = () => `mailto:${email}?subject=${encodeURIComponent("Estimate Request")}&body=${encodeURIComponent(buildEstimateMessage("email", "modal"))}`;
+  const buildWhatsAppHref = () => `https://wa.me/${phone}?text=${encodeURIComponent(buildEstimateMessage("sms"))}`;
   const buildEstimateHref = () => buildSmsHref();
+
+  const openExternalHref = (href) => {
+    const link = document.createElement("a");
+    link.href = href;
+    link.target = href.startsWith("http") ? "_blank" : "_self";
+    link.rel = "noopener";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  };
 
   const buildSupabasePayload = (source = "page") => {
     const scope = source === "modal" ? desktopEstimateForm : document;
@@ -593,10 +604,10 @@ if (calculator) {
     ].filter((line) => line !== null).join("\n");
 
     return {
-      name: source === "modal" ? scope?.elements.name?.value.trim() || null : document.getElementById("name")?.value.trim() || null,
-      phone: source === "modal" ? scope?.elements.phone?.value.trim() || null : document.getElementById("phone")?.value.trim() || null,
-      email: source === "modal" ? scope?.elements.email?.value.trim() || null : null,
-      city: source === "modal" ? scope?.elements.city?.value.trim() || null : null,
+      name: source === "modal" ? scope?.elements.name?.value.trim() || "" : document.getElementById("name")?.value.trim() || "",
+      phone: source === "modal" ? scope?.elements.phone?.value.trim() || "" : document.getElementById("phone")?.value.trim() || "",
+      email: source === "modal" ? scope?.elements.email?.value.trim() || "" : "",
+      city: source === "modal" ? scope?.elements.city?.value.trim() || "" : "",
       service: service || "Not selected",
       details: fullDetails,
       status: "new"
@@ -608,13 +619,18 @@ if (calculator) {
       method: "POST",
       headers: {
         "apikey": supabasePublishableKey,
-        "Authorization": `Bearer ${supabasePublishableKey}`,
         "Content-Type": "application/json",
         "Prefer": "return=minimal"
       },
       body: JSON.stringify(buildSupabasePayload(source))
     });
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Supabase estimate_requests insert failed", {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorText
+      });
       throw new Error(`Supabase request failed: ${response.status}`);
     }
   }
@@ -710,21 +726,36 @@ if (calculator) {
     renderEstimateSummary();
   });
 
-  sendEstimateLinks.forEach((link) => {
-    link.addEventListener("click", async (event) => {
-      updateEstimateLinks();
-      event.preventDefault();
-      if (isMobileDevice()) {
-        try {
-          await saveEstimateRequest("page");
-        } catch (error) {
-          console.warn(error);
-        }
-        window.location.href = buildSmsHref();
-        return;
+  const handleEstimateButtonClick = async (event, label) => {
+    console.log(`${label} clicked`);
+    updateEstimateLinks();
+    event.preventDefault();
+    if (isMobileDevice()) {
+      try {
+        await saveEstimateRequest("page");
+      } catch (error) {
+        console.error("Estimate request was not saved before SMS opened.", error);
       }
-      openEstimateModal();
+      window.location.href = buildSmsHref();
+      return;
+    }
+    openEstimateModal();
+  };
+
+  sendEstimateLinks.forEach((link) => {
+    link.addEventListener("click", (event) => {
+      handleEstimateButtonClick(event, "Send Estimate");
     });
+  });
+
+  textPhotosEstimateLink?.addEventListener("click", (event) => {
+    console.log("Send Photos via WhatsApp clicked");
+    event.preventDefault();
+    if (isMobileDevice()) {
+      openExternalHref(buildSmsHref());
+      return;
+    }
+    openExternalHref(buildWhatsAppHref());
   });
 
   estimateModal?.querySelectorAll("[data-estimate-close]").forEach((control) => {
@@ -743,9 +774,9 @@ if (calculator) {
       await saveEstimateRequest("modal");
     } catch (error) {
       estimateFormAlert.textContent = "We could not save the request, but your email will still open.";
-      console.warn(error);
+      console.error("Estimate request was not saved before email opened.", error);
     }
-    window.location.href = buildEmailHref();
+    openExternalHref(buildEmailHref());
     closeEstimateModal();
   });
 
