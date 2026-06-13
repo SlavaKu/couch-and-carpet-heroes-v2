@@ -80,7 +80,6 @@ if (calculator) {
   const desktopEstimateForm = document.querySelector("[data-desktop-estimate-form]");
   const estimateFormAlert = document.querySelector("[data-estimate-form-alert]");
   const textPhotosEstimateLink = document.querySelector(".summary-actions .btn-secondary");
-  const mobileTotal = document.querySelector("[data-mobile-total]");
 
   const phone = "16505196607";
   const minimumServiceCall = 120;
@@ -482,7 +481,6 @@ if (calculator) {
     const estimate = calculateEstimate();
     if (estimate.categories.length === 0) {
       summaryRoot.innerHTML = `<div class="summary-empty">Select one or more residential cleaning services to build your estimated quote.</div><p class="summary-note">Photos help us confirm the exact price before arrival.</p>`;
-      if (mobileTotal) mobileTotal.textContent = "Text for quote";
       if (calculatorTotalRoot) calculatorTotalRoot.textContent = "Estimated price: select a service";
       updateEstimateLinks();
       return;
@@ -506,7 +504,6 @@ if (calculator) {
       <p class="summary-note">This is an estimate. Final price depends on size, fabric, stains, odor, access, and condition.</p>
       <p class="summary-note">Photos help us confirm the exact price before arrival.</p>
     `;
-    if (mobileTotal) mobileTotal.textContent = totalText;
     if (calculatorTotalRoot) calculatorTotalRoot.textContent = simpleTotalText;
     updateEstimateLinks();
   }
