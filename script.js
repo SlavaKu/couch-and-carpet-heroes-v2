@@ -579,7 +579,12 @@ if (calculator) {
     || (/Macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
   const buildSmsHref = () => `sms:+${phone}?body=${encodeURIComponent(buildEstimateMessage("sms"))}`;
   const buildEmailHref = () => `mailto:${email}?subject=${encodeURIComponent("Estimate Request")}&body=${encodeURIComponent(buildEstimateMessage("email", "modal"))}`;
-  const buildWhatsAppHref = () => `https://wa.me/${phone}?text=${encodeURIComponent(buildEstimateMessage("sms"))}`;
+  const buildWhatsAppMessage = () => [
+    buildEstimateMessage("sms"),
+    "",
+    "I will send photos for an exact quote."
+  ].join("\n");
+  const buildWhatsAppHref = () => `https://wa.me/${phone}?text=${encodeURIComponent(buildWhatsAppMessage())}`;
   const buildEstimateHref = () => buildSmsHref();
 
   const openExternalHref = (href) => {
@@ -633,6 +638,11 @@ if (calculator) {
       });
       throw new Error(`Supabase request failed: ${response.status}`);
     }
+  }
+
+  async function notifyBusinessOwnerLater(_requestPayload) {
+    // Future owner notifications belong in a backend/Supabase Edge Function.
+    // Do not place email, SMS, Telegram bot tokens, or Supabase secret keys in browser code.
   }
 
   const openEstimateModal = () => {
@@ -751,10 +761,6 @@ if (calculator) {
   textPhotosEstimateLink?.addEventListener("click", (event) => {
     console.log("Send Photos via WhatsApp clicked");
     event.preventDefault();
-    if (isMobileDevice()) {
-      openExternalHref(buildSmsHref());
-      return;
-    }
     openExternalHref(buildWhatsAppHref());
   });
 
@@ -772,12 +778,14 @@ if (calculator) {
     estimateFormAlert.textContent = "Saving your request...";
     try {
       await saveEstimateRequest("modal");
+      await notifyBusinessOwnerLater(buildSupabasePayload("modal"));
+      estimateFormAlert.textContent = "Thank you! Your estimate request has been sent.";
+      desktopEstimateForm.reset();
+      setTimeout(closeEstimateModal, 1800);
     } catch (error) {
-      estimateFormAlert.textContent = "We could not save the request, but your email will still open.";
-      console.error("Estimate request was not saved before email opened.", error);
+      estimateFormAlert.textContent = "We could not save the request. Please try again or text us directly.";
+      console.error("Estimate request was not saved.", error);
     }
-    openExternalHref(buildEmailHref());
-    closeEstimateModal();
   });
 
   ["name", "phone", "message"].forEach((id) => {
