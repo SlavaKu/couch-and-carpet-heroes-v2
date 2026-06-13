@@ -618,6 +618,65 @@ section { padding: 84px 0; }
   color: var(--navy);
 }
 .summary-actions { display: grid; gap: 12px; margin-top: 18px; }
+.estimate-modal[hidden] { display: none; }
+.estimate-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+.estimate-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(16, 24, 39, .56);
+  backdrop-filter: blur(6px);
+}
+.estimate-modal-card {
+  position: relative;
+  width: min(100%, 680px);
+  max-height: min(820px, calc(100vh - 48px));
+  overflow: auto;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 26px;
+  box-shadow: var(--shadow);
+  padding: 24px;
+}
+.estimate-modal-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+.estimate-modal-head h3 {
+  font-size: 28px;
+  letter-spacing: -0.03em;
+}
+.estimate-modal-head p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-weight: 700;
+}
+.modal-close {
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #f8fafc;
+  color: var(--navy);
+  cursor: pointer;
+  font-size: 26px;
+  line-height: 1;
+  flex: 0 0 auto;
+}
+.estimate-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
 
 input, select, textarea {
   width: 100%;
@@ -1044,8 +1103,9 @@ details p { color: var(--muted); margin-bottom: 0; }
   .btn { width: 100%; }
   .hero-card-body { grid-template-columns: 1fr; }
   .rating-card { text-align: left; }
-  .services-grid, .additional-services ul, .project-grid, .why-grid, .review-grid, .footer-grid, .category-picker, .field-grid, .level-grid { grid-template-columns: 1fr; }
-  .section-head { text-align: left; }
+      .services-grid, .additional-services ul, .project-grid, .why-grid, .review-grid, .footer-grid, .category-picker, .field-grid, .level-grid { grid-template-columns: 1fr; }
+      .estimate-form-grid { grid-template-columns: 1fr; }
+      .section-head { text-align: left; }
   .section-head h2 { font-size: 36px; }
   .section-head p { font-size: 17px; }
   .service-top { min-height: auto; }

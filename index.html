@@ -235,11 +235,94 @@
               <h3>Your Estimate</h3>
               <div data-summary></div>
               <div class="summary-actions">
-                <button class="btn btn-primary" type="button" data-whatsapp>Send Estimate on WhatsApp</button>
+                <button class="btn btn-primary" type="button" data-send-estimate>Send Estimate</button>
                 <a class="btn btn-secondary" href="sms:+16505196607?body=Hello%2C%20I%20would%20like%20an%20exact%20cleaning%20quote.%20I%20can%20send%20photos.">Text Photos for Exact Quote</a>
               </div>
             </div>
           </aside>
+        </div>
+
+        <div class="estimate-modal" data-estimate-modal hidden>
+          <div class="estimate-modal-backdrop" data-estimate-close></div>
+          <form class="estimate-modal-card" data-desktop-estimate-form>
+            <div class="estimate-modal-head">
+              <div>
+                <h3>Send Your Estimate</h3>
+                <p>Tell us where the cleaning is needed, then attach photos in your email before sending.</p>
+              </div>
+              <button class="modal-close" type="button" data-estimate-close aria-label="Close estimate form">×</button>
+            </div>
+
+            <div class="estimate-form-grid">
+              <div class="field">
+                <label for="estimateName">Name *</label>
+                <input id="estimateName" name="name" autocomplete="name" required>
+              </div>
+              <div class="field">
+                <label for="estimatePhone">Phone number *</label>
+                <input id="estimatePhone" name="phone" type="tel" autocomplete="tel" inputmode="tel" required>
+              </div>
+              <div class="field">
+                <label for="estimateService">Service *</label>
+                <input id="estimateService" name="service" autocomplete="off" required>
+              </div>
+              <div class="field">
+                <label for="estimateCity">City</label>
+                <input id="estimateCity" name="city" list="bayAreaCities" autocomplete="address-level2">
+                <datalist id="bayAreaCities">
+                  <option value="Mountain View"></option>
+                  <option value="Palo Alto"></option>
+                  <option value="Los Altos"></option>
+                  <option value="Los Altos Hills"></option>
+                  <option value="Sunnyvale"></option>
+                  <option value="Cupertino"></option>
+                  <option value="Santa Clara"></option>
+                  <option value="San Jose"></option>
+                  <option value="Campbell"></option>
+                  <option value="Saratoga"></option>
+                  <option value="Los Gatos"></option>
+                  <option value="Milpitas"></option>
+                  <option value="Menlo Park"></option>
+                  <option value="Atherton"></option>
+                  <option value="Redwood City"></option>
+                  <option value="San Carlos"></option>
+                  <option value="Belmont"></option>
+                  <option value="Foster City"></option>
+                  <option value="San Mateo"></option>
+                  <option value="Burlingame"></option>
+                  <option value="San Bruno"></option>
+                  <option value="South San Francisco"></option>
+                  <option value="Fremont"></option>
+                  <option value="Newark"></option>
+                  <option value="Union City"></option>
+                  <option value="Hayward"></option>
+                  <option value="Pleasanton"></option>
+                  <option value="Dublin"></option>
+                  <option value="Livermore"></option>
+                  <option value="Oakland"></option>
+                  <option value="Berkeley"></option>
+                  <option value="Alameda"></option>
+                  <option value="Emeryville"></option>
+                  <option value="San Leandro"></option>
+                </datalist>
+              </div>
+              <div class="field">
+                <label for="estimateEmail">Email</label>
+                <input id="estimateEmail" name="email" type="email" autocomplete="email">
+              </div>
+              <div class="field field-full">
+                <label for="estimateAddress">Street address</label>
+                <input id="estimateAddress" name="address" autocomplete="street-address">
+              </div>
+              <div class="field field-full">
+                <label for="estimateNotes">Additional notes</label>
+                <textarea id="estimateNotes" name="notes" placeholder="Gate code, parking, stains, odor, timing, or anything we should know."></textarea>
+              </div>
+            </div>
+
+            <p class="form-note" data-estimate-form-alert role="status" aria-live="polite"></p>
+            <button class="btn btn-primary" type="submit">Open Email</button>
+          </form>
         </div>
       </div>
     </section>

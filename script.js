@@ -74,12 +74,17 @@ if (calculator) {
   const summaryRoot = calculator.querySelector("[data-summary]");
   const alertRoot = calculator.querySelector("[data-calculator-alert]");
   const calculatorTotalRoot = calculator.querySelector("[data-calculator-total]");
-  const whatsappButton = calculator.querySelector("[data-whatsapp]");
   const sendEstimateLinks = document.querySelectorAll("[data-send-estimate]");
+  const estimateModal = calculator.querySelector("[data-estimate-modal]");
+  const desktopEstimateForm = calculator.querySelector("[data-desktop-estimate-form]");
+  const estimateFormAlert = calculator.querySelector("[data-estimate-form-alert]");
   const mobileTotal = document.querySelector("[data-mobile-total]");
 
   const phone = "16505196607";
+  const email = "info@cleanpro.com";
   const minimumServiceCall = 120;
+  const supabaseRestUrl = "https://gxtrpycepqnecoyxnonl.supabase.co/rest/v1";
+  const supabasePublishableKey = "sb_publishable_Sx1dm7TzcIntHfB6lrFctA_xoKF_EYU";
 
   // Edit prices here when Couch and Carpet Heroes updates the service menu.
   const pricingData = {
@@ -504,10 +509,51 @@ if (calculator) {
     updateEstimateLinks();
   }
 
-  function buildEstimateMessage() {
+  const getCustomerDetails = (source = "page") => {
+    const scope = source === "modal" ? desktopEstimateForm : document;
+    const name = source === "modal" ? scope?.elements.name?.value.trim() : document.getElementById("name")?.value.trim();
+    const customerPhone = source === "modal" ? scope?.elements.phone?.value.trim() : document.getElementById("phone")?.value.trim();
+    const emailValue = source === "modal" ? scope?.elements.email?.value.trim() : "";
+    const city = source === "modal" ? scope?.elements.city?.value.trim() : "";
+    const address = source === "modal" ? scope?.elements.address?.value.trim() : "";
+    const service = source === "modal" ? scope?.elements.service?.value.trim() : "";
+    const details = source === "modal" ? scope?.elements.notes?.value.trim() : document.getElementById("message")?.value.trim();
+    return [
+      name ? `Name: ${name}` : "",
+      customerPhone ? `Phone: ${customerPhone}` : "",
+      emailValue ? `Email: ${emailValue}` : "",
+      city ? `City: ${city}` : "",
+      address ? `Street address: ${address}` : "",
+      service ? `Service: ${service}` : "",
+      details ? `${source === "modal" ? "Additional notes" : "Details"}: ${details}` : ""
+    ].filter(Boolean);
+  };
+
+  const selectedServiceText = () => {
     const estimate = calculateEstimate();
+    return estimate.categories.map((category) => category.title).join(", ") || "Not selected";
+  };
+
+  const estimateRangeText = () => {
+    const estimate = calculateEstimate();
+    return estimate.total ? `${money(estimate.low)} - ${money(estimate.high)}` : "Custom quote required";
+  };
+
+  function buildEstimateMessage(channel = "sms", customerSource = "page") {
+    const estimate = calculateEstimate();
+    const customerDetails = getCustomerDetails(customerSource);
+    const photoLine = channel === "email"
+      ? "Please attach photos before sending."
+      : "I can send photos and more details if needed.";
     if (estimate.categories.length === 0) {
-      return "Hi, I'm interested in cleaning services. Could you please help me with an estimate? I can send photos or more details if needed.";
+      return [
+        "Hi, I'm interested in cleaning services. Could you please help me with an estimate?",
+        customerDetails.length ? "" : null,
+        customerDetails.length ? "Customer details:" : null,
+        ...customerDetails,
+        "",
+        photoLine
+      ].filter((line) => line !== null).join("\n");
     }
     const range = estimate.total ? `from ${money(estimate.low)} (${money(estimate.low)} - ${money(estimate.high)})` : "custom quote required";
     const items = estimate.categories.flatMap((category) => [
@@ -522,17 +568,76 @@ if (calculator) {
       "",
       "Estimated price:",
       range,
+      customerDetails.length ? "" : null,
+      customerDetails.length ? "Customer details:" : null,
+      ...customerDetails,
       "",
-      "I can send photos and more details if needed."
-    ].join("\n");
+      photoLine
+    ].filter((line) => line !== null).join("\n");
   }
 
-  const buildWhatsAppMessage = () => buildEstimateMessage();
-  const buildSmsHref = () => `sms:+${phone}?body=${encodeURIComponent(buildEstimateMessage())}`;
+  const isMobileDevice = () => window.matchMedia("(pointer: coarse)").matches || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+  const buildSmsHref = () => `sms:+${phone}?body=${encodeURIComponent(buildEstimateMessage("sms"))}`;
+  const buildEmailHref = () => `mailto:${email}?subject=${encodeURIComponent("Estimate Request")}&body=${encodeURIComponent(buildEstimateMessage("email", "modal"))}`;
+  const buildEstimateHref = () => buildSmsHref();
+
+  const buildSupabasePayload = (source = "page") => {
+    const scope = source === "modal" ? desktopEstimateForm : document;
+    const modalNotes = source === "modal" ? scope?.elements.notes?.value.trim() : "";
+    const pageDetails = source === "page" ? document.getElementById("message")?.value.trim() : "";
+    const service = source === "modal" ? scope?.elements.service?.value.trim() : selectedServiceText();
+    const fullDetails = [
+      buildEstimateMessage(source === "modal" ? "email" : "sms", source),
+      modalNotes || pageDetails ? "" : null,
+      modalNotes || pageDetails ? `Additional details: ${modalNotes || pageDetails}` : null
+    ].filter((line) => line !== null).join("\n");
+
+    return {
+      name: source === "modal" ? scope?.elements.name?.value.trim() || null : document.getElementById("name")?.value.trim() || null,
+      phone: source === "modal" ? scope?.elements.phone?.value.trim() || null : document.getElementById("phone")?.value.trim() || null,
+      email: source === "modal" ? scope?.elements.email?.value.trim() || null : null,
+      city: source === "modal" ? scope?.elements.city?.value.trim() || null : null,
+      service: service || "Not selected",
+      details: fullDetails,
+      status: "new"
+    };
+  };
+
+  async function saveEstimateRequest(source = "page") {
+    const response = await fetch(`${supabaseRestUrl}/estimate_requests`, {
+      method: "POST",
+      headers: {
+        "apikey": supabasePublishableKey,
+        "Authorization": `Bearer ${supabasePublishableKey}`,
+        "Content-Type": "application/json",
+        "Prefer": "return=minimal"
+      },
+      body: JSON.stringify(buildSupabasePayload(source))
+    });
+    if (!response.ok) {
+      throw new Error(`Supabase request failed: ${response.status}`);
+    }
+  }
+
+  const openEstimateModal = () => {
+    if (!estimateModal) return;
+    if (desktopEstimateForm?.elements.service && !desktopEstimateForm.elements.service.value.trim()) {
+      desktopEstimateForm.elements.service.value = selectedServiceText() === "Not selected" ? "" : selectedServiceText();
+    }
+    estimateModal.hidden = false;
+    document.body.style.overflow = "hidden";
+    desktopEstimateForm?.elements.name?.focus();
+  };
+
+  const closeEstimateModal = () => {
+    if (!estimateModal) return;
+    estimateModal.hidden = true;
+    document.body.style.overflow = "";
+  };
 
   function updateEstimateLinks() {
     sendEstimateLinks.forEach((link) => {
-      link.href = buildSmsHref();
+      link.href = buildEstimateHref();
     });
   }
 
@@ -605,8 +710,47 @@ if (calculator) {
     renderEstimateSummary();
   });
 
-  whatsappButton.addEventListener("click", () => {
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(buildWhatsAppMessage())}`, "_blank", "noopener");
+  sendEstimateLinks.forEach((link) => {
+    link.addEventListener("click", async (event) => {
+      updateEstimateLinks();
+      event.preventDefault();
+      if (isMobileDevice()) {
+        try {
+          await saveEstimateRequest("page");
+        } catch (error) {
+          console.warn(error);
+        }
+        window.location.href = buildSmsHref();
+        return;
+      }
+      openEstimateModal();
+    });
+  });
+
+  estimateModal?.querySelectorAll("[data-estimate-close]").forEach((control) => {
+    control.addEventListener("click", closeEstimateModal);
+  });
+
+  desktopEstimateForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!desktopEstimateForm.checkValidity()) {
+      estimateFormAlert.textContent = "Please enter your name, phone number, and service.";
+      desktopEstimateForm.reportValidity();
+      return;
+    }
+    estimateFormAlert.textContent = "Saving your request...";
+    try {
+      await saveEstimateRequest("modal");
+    } catch (error) {
+      estimateFormAlert.textContent = "We could not save the request, but your email will still open.";
+      console.warn(error);
+    }
+    window.location.href = buildEmailHref();
+    closeEstimateModal();
+  });
+
+  ["name", "phone", "message"].forEach((id) => {
+    document.getElementById(id)?.addEventListener("input", updateEstimateLinks);
   });
 
   document.querySelectorAll("[data-jump-service]").forEach((link) => {
