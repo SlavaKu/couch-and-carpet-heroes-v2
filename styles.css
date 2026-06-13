@@ -660,6 +660,35 @@ section { padding: 84px 0; }
   color: var(--muted);
   font-weight: 700;
 }
+.estimate-success-card {
+  max-width: 460px;
+  text-align: center;
+  align-items: center;
+}
+.estimate-success-card h3 {
+  font-size: 30px;
+  letter-spacing: -0.03em;
+}
+.estimate-success-card p {
+  margin: 10px 0 20px;
+  color: var(--muted);
+  font-weight: 700;
+}
+.estimate-success-card .btn {
+  width: min(100%, 220px);
+}
+.estimate-success-icon {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 16px;
+  background: #ecfdf3;
+  color: var(--green);
+  font-size: 28px;
+  font-weight: 950;
+}
 .modal-close {
   width: 42px;
   height: 42px;

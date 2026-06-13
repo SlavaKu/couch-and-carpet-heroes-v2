@@ -76,6 +76,7 @@ if (calculator) {
   const calculatorTotalRoot = calculator.querySelector("[data-calculator-total]");
   const sendEstimateLinks = document.querySelectorAll("[data-send-estimate]");
   const estimateModal = document.querySelector("[data-estimate-modal]");
+  const estimateSuccessModal = document.querySelector("[data-estimate-success-modal]");
   const desktopEstimateForm = document.querySelector("[data-desktop-estimate-form]");
   const estimateFormAlert = document.querySelector("[data-estimate-form-alert]");
   const textPhotosEstimateLink = document.querySelector(".summary-actions .btn-secondary");
@@ -580,6 +581,9 @@ if (calculator) {
     "",
     "I will send photos for an exact quote."
   ].join("\n");
+  const isMobileDevice = () => /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
+    || (/Macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+  const buildSmsHref = () => `sms:+${phone}?body=${encodeURIComponent(buildEstimateMessage("sms"))}`;
   const buildWhatsAppHref = () => `https://wa.me/${phone}?text=${encodeURIComponent(buildWhatsAppMessage())}`;
 
   const openExternalHref = (href) => {
@@ -705,6 +709,18 @@ if (calculator) {
     document.body.style.overflow = "";
   };
 
+  const openSuccessModal = () => {
+    if (!estimateSuccessModal) return;
+    estimateSuccessModal.hidden = false;
+    document.body.style.overflow = "hidden";
+  };
+
+  const closeSuccessModal = () => {
+    if (!estimateSuccessModal) return;
+    estimateSuccessModal.hidden = true;
+    document.body.style.overflow = "";
+  };
+
   function updateEstimateLinks() {
     sendEstimateLinks.forEach((link) => {
       link.href = "#estimate";
@@ -785,6 +801,15 @@ if (calculator) {
     console.log(`${label} clicked`);
     updateEstimateLinks();
     event.preventDefault();
+    if (isMobileDevice()) {
+      try {
+        await saveEstimateRequest("page");
+      } catch (error) {
+        console.error("Estimate request was not saved before SMS opened.", error);
+      }
+      window.location.href = buildSmsHref();
+      return;
+    }
     openEstimateModal();
   };
 
@@ -804,6 +829,10 @@ if (calculator) {
     control.addEventListener("click", closeEstimateModal);
   });
 
+  estimateSuccessModal?.querySelectorAll("[data-success-close]").forEach((control) => {
+    control.addEventListener("click", closeSuccessModal);
+  });
+
   desktopEstimateForm?.addEventListener("submit", async (event) => {
     event.preventDefault();
     if (!desktopEstimateForm.checkValidity()) {
@@ -821,8 +850,9 @@ if (calculator) {
       await notifyBusinessOwnerLater(buildSupabasePayload("modal"));
       closeEstimateModal();
       desktopEstimateForm.reset();
-      alertRoot.textContent = "Thank you! We received your request and will contact you shortly.";
-      setTimeout(() => { alertRoot.textContent = ""; }, 5000);
+      if (!isMobileDevice()) {
+        openSuccessModal();
+      }
     } catch (error) {
       estimateFormAlert.textContent = "We could not submit the request. Please try again or text us directly.";
       console.error("Estimate request was not submitted.", error);
