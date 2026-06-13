@@ -581,8 +581,14 @@ if (calculator) {
     "",
     "I will send photos for an exact quote."
   ].join("\n");
-  const isMobileDevice = () => /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
-    || (/Macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+  const isMobileDevice = () => {
+    const userAgentMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
+      || (/Macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+    const mobileViewport = window.matchMedia?.("(max-width: 820px)").matches;
+    const touchMobile = window.matchMedia?.("(pointer: coarse)").matches
+      && window.matchMedia?.("(max-width: 1024px)").matches;
+    return Boolean(userAgentMobile || mobileViewport || touchMobile);
+  };
   const buildSmsHref = () => `sms:+${phone}?body=${encodeURIComponent(buildEstimateMessage("sms"))}`;
   const buildWhatsAppHref = () => `https://wa.me/${phone}?text=${encodeURIComponent(buildWhatsAppMessage())}`;
 
@@ -723,7 +729,7 @@ if (calculator) {
 
   function updateEstimateLinks() {
     sendEstimateLinks.forEach((link) => {
-      link.href = "#estimate";
+      link.href = isMobileDevice() ? buildSmsHref() : "#estimate";
     });
     textPhotosEstimateLink?.setAttribute("href", buildWhatsAppHref());
   }
@@ -802,11 +808,9 @@ if (calculator) {
     updateEstimateLinks();
     event.preventDefault();
     if (isMobileDevice()) {
-      try {
-        await saveEstimateRequest("page");
-      } catch (error) {
+      saveEstimateRequest("page").catch((error) => {
         console.error("Estimate request was not saved before SMS opened.", error);
-      }
+      });
       window.location.href = buildSmsHref();
       return;
     }
