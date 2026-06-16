@@ -252,6 +252,31 @@
         <div class="faq-list" data-faq-list></div>
       </section>
     </section>
+
+    <div class="icon-modal" data-icon-modal hidden>
+      <div class="icon-modal-backdrop" data-icon-cancel></div>
+      <section class="icon-modal-card" role="dialog" aria-modal="true" aria-labelledby="iconModalTitle">
+        <div class="card-head">
+          <div>
+            <p class="eyebrow">Why Choose Us</p>
+            <h2 id="iconModalTitle">Add icon</h2>
+          </div>
+        </div>
+        <div class="icon-dropzone" data-icon-dropzone>
+          <input type="file" data-icon-file accept=".svg,.png,.jpg,.jpeg,.webp,image/svg+xml,image/png,image/jpeg,image/webp" hidden>
+          <p>Drag and drop SVG, PNG, JPG, or WEBP here.</p>
+          <button class="btn btn-secondary" type="button" data-icon-choose>Choose file</button>
+        </div>
+        <div class="icon-preview" data-icon-preview>
+          <span>No icon selected</span>
+        </div>
+        <p class="form-message" data-icon-message role="status" aria-live="polite"></p>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" type="button" data-icon-cancel>Cancel</button>
+          <button class="btn btn-primary" type="button" data-icon-insert>Insert icon</button>
+        </div>
+      </section>
+    </div>
   </main>
 </body>
 </html>

@@ -331,7 +331,7 @@ if (calculator) {
     if (!whyGrid || activeFeatures.length === 0) return;
     whyGrid.innerHTML = activeFeatures.map((feature) => `
       <article class="why-card">
-        <div class="service-icon">${escapeCmsText(feature.icon_text)}</div>
+        <div class="service-icon">${feature.icon_url ? `<img src="${escapeCmsText(feature.icon_url)}" alt="" loading="lazy">` : escapeCmsText(feature.icon_text)}</div>
         <h3>${escapeCmsText(feature.title)}</h3>
         <p>${escapeCmsText(feature.description)}</p>
       </article>
@@ -372,7 +372,7 @@ if (calculator) {
         cmsRequest("site_settings", "?select=setting_key,setting_value"),
         cmsRequest("homepage_content", "?select=section_key,content_key,content_value"),
         cmsRequest("services", "?select=service_key,title,description,button_text,sort_order,is_active&is_active=eq.true&order=sort_order.asc"),
-        cmsRequest("why_features", "?select=title,description,icon_text,sort_order,is_active&is_active=eq.true&order=sort_order.asc"),
+        cmsRequest("why_features", "?select=title,description,icon_text,icon_url,sort_order,is_active&is_active=eq.true&order=sort_order.asc"),
         cmsRequest("about_paragraphs", "?select=paragraph_text,sort_order,is_active&is_active=eq.true&order=sort_order.asc"),
         cmsRequest("social_links", "?select=platform,url,sort_order,is_active&is_active=eq.true&order=sort_order.asc"),
         cmsRequest("faqs", "?select=id,question,answer,sort_order,is_active&is_active=eq.true&order=sort_order.asc")

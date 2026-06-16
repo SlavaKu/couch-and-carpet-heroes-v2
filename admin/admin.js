@@ -8,6 +8,13 @@ const adminPanel = document.querySelector("[data-admin-panel]");
 const loginForm = document.querySelector("[data-login-form]");
 const loginMessage = document.querySelector("[data-login-message]");
 const statusMessage = document.querySelector("[data-status-message]");
+const iconModal = document.querySelector("[data-icon-modal]");
+const iconDropzone = document.querySelector("[data-icon-dropzone]");
+const iconFileInput = document.querySelector("[data-icon-file]");
+const iconChooseButton = document.querySelector("[data-icon-choose]");
+const iconInsertButton = document.querySelector("[data-icon-insert]");
+const iconPreview = document.querySelector("[data-icon-preview]");
+const iconModalMessage = document.querySelector("[data-icon-message]");
 
 const lists = {
   services: document.querySelector("[data-services-list]"),
@@ -103,6 +110,9 @@ let whyFeatures = [];
 let aboutParagraphs = [];
 let socialLinks = [];
 let faqs = [];
+let activeIconFeatureId = "";
+let selectedIconFile = null;
+let selectedIconPreviewUrl = "";
 
 const setMessage = (element, message, type = "") => {
   if (!element) return;
@@ -277,7 +287,7 @@ async function loadWhyFeatures() {
 
   const { data, error } = await client
     .from("why_features")
-    .select("id, feature_key, title, description, icon_text, sort_order, is_active")
+    .select("id, feature_key, title, description, icon_text, icon_url, sort_order, is_active")
     .order("sort_order", { ascending: true });
 
   if (error) throw error;
@@ -299,8 +309,11 @@ function renderWhyFeatures() {
       <label>
         Icon / Emoji
         <input type="text" data-why-field="icon_text" value="${escapeHtml(feature.icon_text || "")}">
-        <small class="field-help">Use one emoji or short symbol.</small>
       </label>
+      <input type="hidden" data-why-field="icon_url" value="${escapeHtml(feature.icon_url || "")}">
+      <div class="icon-current" data-icon-current>
+        ${feature.icon_url ? `<img src="${escapeHtml(feature.icon_url)}" alt="">` : `<span>${escapeHtml(feature.icon_text || "")}</span>`}
+      </div>
       <button class="btn btn-secondary" type="button" data-add-icon="${feature.id}">Add icon</button>
       <label>
         Title
@@ -323,6 +336,7 @@ function syncWhyFeatures() {
     const item = whyFeatures.find((feature) => feature.id === card.dataset.whyId);
     if (!item) return;
     item.icon_text = card.querySelector('[data-why-field="icon_text"]')?.value.trim() || "";
+    item.icon_url = card.querySelector('[data-why-field="icon_url"]')?.value.trim() || "";
     item.title = card.querySelector('[data-why-field="title"]')?.value.trim() || "";
     item.description = card.querySelector('[data-why-field="description"]')?.value.trim() || "";
     item.sort_order = Number(card.querySelector('[data-why-field="sort_order"]')?.value || 0);
@@ -335,6 +349,7 @@ async function saveWhyFeatures() {
   for (const feature of whyFeatures) {
     const { error } = await client.from("why_features").update({
       icon_text: feature.icon_text,
+      icon_url: feature.icon_url || null,
       title: feature.title,
       description: feature.description,
       sort_order: feature.sort_order,
@@ -626,7 +641,7 @@ async function loadAdminData() {
     return;
   }
 
-  setMessage(statusMessage, "Content loaded", "success");
+  setMessage(statusMessage, "Content loaded successfully", "success");
 }
 
 async function handleSave(action, successText) {
@@ -638,6 +653,120 @@ async function handleSave(action, successText) {
     console.error(error);
     setMessage(statusMessage, error.message || "Save failed.", "error");
   }
+}
+
+const isAllowedIconFile = (file) => {
+  if (!file) return false;
+  const allowedTypes = ["image/svg+xml", "image/png", "image/jpeg", "image/webp"];
+  const allowedExtensions = [".svg", ".png", ".jpg", ".jpeg", ".webp"];
+  const name = file.name.toLowerCase();
+  return allowedTypes.includes(file.type) || allowedExtensions.some((extension) => name.endsWith(extension));
+};
+
+const resetIconModal = () => {
+  selectedIconFile = null;
+  if (selectedIconPreviewUrl) URL.revokeObjectURL(selectedIconPreviewUrl);
+  selectedIconPreviewUrl = "";
+  if (iconFileInput) iconFileInput.value = "";
+  if (iconPreview) {
+    iconPreview.innerHTML = "<span>No icon selected</span>";
+  }
+  setMessage(iconModalMessage, "");
+};
+
+const openIconModal = (featureId) => {
+  activeIconFeatureId = featureId;
+  resetIconModal();
+  const feature = whyFeatures.find((item) => item.id === featureId);
+  if (feature?.icon_url && iconPreview) {
+    iconPreview.innerHTML = `<img src="${escapeHtml(feature.icon_url)}" alt="">`;
+  }
+  if (iconModal) iconModal.hidden = false;
+};
+
+const closeIconModal = () => {
+  if (iconModal) iconModal.hidden = true;
+  activeIconFeatureId = "";
+  resetIconModal();
+};
+
+const setSelectedIconFile = (file) => {
+  if (!file) return;
+  if (!isAllowedIconFile(file)) {
+    setMessage(iconModalMessage, "Please choose an SVG, PNG, JPG, or WEBP file.", "error");
+    return;
+  }
+  selectedIconFile = file;
+  if (selectedIconPreviewUrl) URL.revokeObjectURL(selectedIconPreviewUrl);
+  selectedIconPreviewUrl = URL.createObjectURL(file);
+  if (iconPreview) {
+    iconPreview.innerHTML = `<img src="${selectedIconPreviewUrl}" alt="">`;
+  }
+  setMessage(iconModalMessage, file.name);
+};
+
+const safeFileName = (name) => name
+  .toLowerCase()
+  .replace(/[^a-z0-9._-]+/g, "-")
+  .replace(/-+/g, "-")
+  .replace(/^-|-$/g, "");
+
+async function uploadIconForActiveFeature() {
+  if (!activeIconFeatureId || !selectedIconFile) {
+    setMessage(iconModalMessage, "Choose an icon file first.", "error");
+    return;
+  }
+
+  const feature = whyFeatures.find((item) => item.id === activeIconFeatureId);
+  if (!feature || feature.id.startsWith("fallback-")) {
+    setMessage(iconModalMessage, "Save is available after Supabase content loads.", "error");
+    return;
+  }
+
+  setMessage(iconModalMessage, "Uploading icon...");
+  const fileName = safeFileName(selectedIconFile.name) || "icon";
+  const folder = safeFileName(feature.feature_key || feature.id) || feature.id;
+  const filePath = `${folder}/${Date.now()}-${fileName}`;
+  const { error: uploadError } = await client.storage
+    .from("why-icons")
+    .upload(filePath, selectedIconFile, {
+      cacheControl: "3600",
+      contentType: selectedIconFile.type || undefined,
+      upsert: true
+    });
+
+  if (uploadError) {
+    console.error("Icon upload failed", uploadError);
+    setMessage(iconModalMessage, uploadError.message || "Icon upload failed.", "error");
+    return;
+  }
+
+  const { data: publicData } = client.storage.from("why-icons").getPublicUrl(filePath);
+  const publicUrl = publicData?.publicUrl || "";
+  if (!publicUrl) {
+    setMessage(iconModalMessage, "Could not create public icon URL.", "error");
+    return;
+  }
+
+  const { error: updateError } = await client
+    .from("why_features")
+    .update({ icon_url: publicUrl })
+    .eq("id", feature.id);
+
+  if (updateError) {
+    console.error("Saving icon URL failed", updateError);
+    setMessage(iconModalMessage, updateError.message || "Could not save icon URL.", "error");
+    return;
+  }
+
+  feature.icon_url = publicUrl;
+  const card = document.querySelector(`[data-why-id="${CSS.escape(feature.id)}"]`);
+  const hiddenInput = card?.querySelector('[data-why-field="icon_url"]');
+  const currentPreview = card?.querySelector("[data-icon-current]");
+  if (hiddenInput) hiddenInput.value = publicUrl;
+  if (currentPreview) currentPreview.innerHTML = `<img src="${escapeHtml(publicUrl)}" alt="">`;
+  setMessage(statusMessage, "Icon uploaded and saved.", "success");
+  closeIconModal();
 }
 
 document.addEventListener("input", (event) => {
@@ -753,16 +882,37 @@ document.querySelector("[data-add-faq]").addEventListener("click", () => {
 lists.why.addEventListener("click", (event) => {
   const button = event.target.closest("[data-add-icon]");
   if (!button) return;
-  const card = button.closest("[data-why-id]");
-  const input = card?.querySelector('[data-why-field="icon_text"]');
-  if (!input) return;
-  const nextIcon = window.prompt("Type or paste one emoji or short symbol.", input.value);
-  if (nextIcon === null) return;
-  input.value = nextIcon.trim();
-  const item = whyFeatures.find((feature) => feature.id === card.dataset.whyId);
-  if (item) item.icon_text = input.value;
-  input.focus();
+  openIconModal(button.dataset.addIcon);
 });
+
+iconChooseButton?.addEventListener("click", () => {
+  iconFileInput?.click();
+});
+
+iconFileInput?.addEventListener("change", () => {
+  setSelectedIconFile(iconFileInput.files?.[0]);
+});
+
+iconDropzone?.addEventListener("dragover", (event) => {
+  event.preventDefault();
+  iconDropzone.classList.add("is-dragging");
+});
+
+iconDropzone?.addEventListener("dragleave", () => {
+  iconDropzone.classList.remove("is-dragging");
+});
+
+iconDropzone?.addEventListener("drop", (event) => {
+  event.preventDefault();
+  iconDropzone.classList.remove("is-dragging");
+  setSelectedIconFile(event.dataTransfer?.files?.[0]);
+});
+
+document.querySelectorAll("[data-icon-cancel]").forEach((button) => {
+  button.addEventListener("click", closeIconModal);
+});
+
+iconInsertButton?.addEventListener("click", uploadIconForActiveFeature);
 
 lists.about.addEventListener("click", async (event) => {
   const button = event.target.closest("[data-delete-about]");
