@@ -42,7 +42,7 @@
       </nav>
 
       <div class="header-cta">
-        <a class="phone-link" href="tel:+16505196607">(650) 519-6607</a>
+        <a class="phone-link" href="tel:+16505196607" data-business-phone>(650) 519-6607</a>
         <a class="btn btn-primary" href="#estimate">Get Estimate</a>
         <button class="mobile-menu-btn" id="menuBtn" aria-label="Open menu" aria-controls="mainNav" aria-expanded="false">☰</button>
       </div>
@@ -54,12 +54,12 @@
       <div class="container hero-grid">
         <div>
           <div class="eyebrow">Local cleaning pros</div>
-          <h1>Professional Sofa & Carpet Cleaning <span>in the Bay Area</span></h1>
-          <p class="lead">Deep cleaning for sofas, carpets, rugs, mattresses and upholstery. Eco-friendly, safe for kids and pets, with clear estimated pricing before we start.</p>
+          <h1 data-cms="hero.title">Professional Sofa & Carpet Cleaning <span>in the Bay Area</span></h1>
+          <p class="lead" data-cms="hero.subtitle">Deep cleaning for sofas, carpets, rugs, mattresses and upholstery. Eco-friendly, safe for kids and pets, with clear estimated pricing before we start.</p>
 
           <div class="hero-actions">
-            <a class="btn btn-primary" href="#estimate">Get Instant Estimate</a>
-            <a class="btn btn-secondary" href="sms:+16505196607?body=Hello%2C%20I%20would%20like%20an%20exact%20cleaning%20quote.%20I%20can%20send%20photos.">Text Us Photos</a>
+            <a class="btn btn-primary" href="#estimate" data-cms="hero.cta_text">Get Instant Estimate</a>
+            <a class="btn btn-secondary" href="sms:+16505196607?body=Hello%2C%20I%20would%20like%20an%20exact%20cleaning%20quote.%20I%20can%20send%20photos." data-sms-link>Text Us Photos</a>
           </div>
 
           <div class="trust-row" aria-label="Service benefits">
@@ -236,7 +236,7 @@
               <div data-summary></div>
               <div class="summary-actions">
                 <button class="btn btn-primary" type="button" data-send-estimate>Send Estimate</button>
-                <a class="btn btn-secondary" href="https://wa.me/16505196607?text=Hello%2C%20I%20would%20like%20to%20send%20photos%20for%20an%20exact%20quote.">Send Photos via WhatsApp</a>
+                <a class="btn btn-secondary" href="https://wa.me/16505196607?text=Hello%2C%20I%20would%20like%20to%20send%20photos%20for%20an%20exact%20quote." data-whatsapp-link>Send Photos via WhatsApp</a>
               </div>
             </div>
           </aside>
@@ -355,7 +355,7 @@
             </div>
             <div class="field">
               <label for="phone">Phone</label>
-              <input id="phone" name="phone" autocomplete="tel" placeholder="(650) 519-6607">
+              <input id="phone" name="phone" autocomplete="tel" placeholder="(650) 519-6607" data-business-phone-placeholder>
             </div>
             <div class="field">
               <label for="message">Details</label>
@@ -363,7 +363,7 @@
             </div>
             <button class="btn btn-primary" type="submit">Send Request</button>
           </div>
-          <p class="form-note">No payment required now. For faster estimate, text photos to <a href="sms:+16505196607?body=Hello%2C%20I%20would%20like%20an%20exact%20cleaning%20quote.%20I%20can%20send%20photos.">(650) 519-6607</a>.</p>
+          <p class="form-note">No payment required now. For faster estimate, text photos to <a href="sms:+16505196607?body=Hello%2C%20I%20would%20like%20an%20exact%20cleaning%20quote.%20I%20can%20send%20photos." data-business-phone data-sms-link>(650) 519-6607</a>.</p>
         </form>
       </div>
     </section>
@@ -452,7 +452,7 @@
           <p>Short answers reduce hesitation and help people click "Get Estimate".</p>
         </div>
 
-        <div class="faq-grid">
+        <div class="faq-grid" data-faq-grid>
           <details open>
             <summary>Do you need photos before giving a price?</summary>
             <p>Photos help us give a more accurate estimate, especially for sofas, rugs, stains and odor issues.</p>
@@ -503,9 +503,9 @@
         <div>
           <h3>Get In Touch</h3>
           <div class="footer-links">
-            <a href="tel:+16505196607">(650) 519-6607</a>
-            <a href="sms:+16505196607?body=Hello%2C%20I%20would%20like%20an%20exact%20cleaning%20quote.%20I%20can%20send%20photos.">Text us photos</a>
-            <a href="https://wa.me/16505196607?text=Hello%2C%20I%20would%20like%20a%20cleaning%20quote.%20I%20can%20send%20photos." target="_blank" rel="noopener">WhatsApp</a>
+            <a href="tel:+16505196607" data-business-phone>(650) 519-6607</a>
+            <a href="sms:+16505196607?body=Hello%2C%20I%20would%20like%20an%20exact%20cleaning%20quote.%20I%20can%20send%20photos." data-sms-link>Text us photos</a>
+            <a href="https://wa.me/16505196607?text=Hello%2C%20I%20would%20like%20a%20cleaning%20quote.%20I%20can%20send%20photos." target="_blank" rel="noopener" data-whatsapp-link>WhatsApp</a>
             <span>Serving Mountain View & nearby cities</span>
             <span>Mon-Sun: 8AM-8PM</span>
           </div>

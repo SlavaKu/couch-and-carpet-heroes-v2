@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Couch and Carpet Heroes Admin</title>
+  <link rel="stylesheet" href="admin.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="admin.js" defer></script>
+</head>
+<body>
+  <main class="admin-shell">
+    <section class="login-panel" data-auth-panel>
+      <div class="brand-mark">CCH</div>
+      <h1>Admin Login</h1>
+      <p>Sign in to edit basic website content.</p>
+
+      <form class="auth-form" data-login-form>
+        <label>
+          Email
+          <input type="email" name="email" autocomplete="email" required>
+        </label>
+        <label>
+          Password
+          <input type="password" name="password" autocomplete="current-password" required>
+        </label>
+        <button class="btn btn-primary" type="submit">Sign In</button>
+        <p class="form-message" data-login-message role="status" aria-live="polite"></p>
+      </form>
+    </section>
+
+    <section class="admin-app" data-admin-panel hidden>
+      <header class="admin-header">
+        <div>
+          <p class="eyebrow">Couch and Carpet Heroes</p>
+          <h1>Website Content Admin</h1>
+        </div>
+        <button class="btn btn-secondary" type="button" data-logout>Logout</button>
+      </header>
+
+      <p class="status-message" data-status-message role="status" aria-live="polite"></p>
+
+      <section class="admin-card">
+        <div class="card-head">
+          <div>
+            <h2>Business Settings</h2>
+            <p>Update contact details used by website links and messages.</p>
+          </div>
+          <button class="btn btn-primary" type="button" data-save-settings>Save Settings</button>
+        </div>
+        <div class="form-grid">
+          <label>
+            Business phone
+            <input type="text" data-setting="business_phone" placeholder="650-519-6607">
+          </label>
+          <label>
+            Business email
+            <input type="email" data-setting="business_email" placeholder="info@ccheroes-pro.com">
+          </label>
+          <label>
+            WhatsApp number
+            <input type="text" data-setting="whatsapp_number" placeholder="16505196607">
+          </label>
+          <label>
+            SMS number
+            <input type="text" data-setting="sms_number" placeholder="16505196607">
+          </label>
+        </div>
+      </section>
+
+      <section class="admin-card">
+        <div class="card-head">
+          <div>
+            <h2>Homepage Content</h2>
+            <p>Edit the main hero text and primary call-to-action.</p>
+          </div>
+          <button class="btn btn-primary" type="button" data-save-homepage>Save Homepage</button>
+        </div>
+        <div class="form-grid single">
+          <label>
+            Hero title
+            <input type="text" data-homepage="hero.title">
+          </label>
+          <label>
+            Hero subtitle
+            <textarea data-homepage="hero.subtitle" rows="4"></textarea>
+          </label>
+          <label>
+            Hero CTA text
+            <input type="text" data-homepage="hero.cta_text">
+          </label>
+        </div>
+      </section>
+
+      <section class="admin-card">
+        <div class="card-head">
+          <div>
+            <h2>FAQs</h2>
+            <p>Edit questions and answers shown on the public website.</p>
+          </div>
+          <div class="card-actions">
+            <button class="btn btn-secondary" type="button" data-add-faq>Add FAQ</button>
+            <button class="btn btn-primary" type="button" data-save-faqs>Save FAQs</button>
+          </div>
+        </div>
+        <div class="faq-list" data-faq-list></div>
+      </section>
+    </section>
+  </main>
+</body>
+</html>

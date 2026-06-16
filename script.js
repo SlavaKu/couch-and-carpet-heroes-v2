@@ -81,7 +81,10 @@ if (calculator) {
   const estimateFormAlert = document.querySelector("[data-estimate-form-alert]");
   const textPhotosEstimateLink = document.querySelector(".summary-actions .btn-secondary");
 
-  const phone = "16505196607";
+  const defaultPhone = "16505196607";
+  const defaultDisplayPhone = "(650) 519-6607";
+  let smsNumber = defaultPhone;
+  let whatsappNumber = defaultPhone;
   const minimumServiceCall = 120;
   const supabaseRestUrl = "https://gxtrpycepqnecoyxnonl.supabase.co/rest/v1";
   const supabasePublishableKey = "sb_publishable_Sx1dm7TzcIntHfB6lrFctA_xoKF_EYU";
@@ -198,6 +201,113 @@ if (calculator) {
         cotton: { label: "Cotton", multiplier: 1.15 },
         delicate: { label: "Silk / Viscose / Delicate", custom: true }
       }
+    }
+  };
+
+  const normalizePhone = (value, fallback = defaultPhone) => {
+    const digits = String(value || "").replace(/\D/g, "");
+    if (!digits) return fallback;
+    return digits.length === 10 ? `1${digits}` : digits;
+  };
+
+  const formatPhone = (value) => {
+    const digits = normalizePhone(value).replace(/^1(?=\d{10}$)/, "");
+    if (digits.length !== 10) return value || defaultDisplayPhone;
+    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+  };
+
+  const escapeCmsText = (value = "") => String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+
+  const cmsRequest = async (table, query = "") => {
+    const response = await fetch(`${supabaseRestUrl}/${table}${query}`, {
+      headers: {
+        "apikey": supabasePublishableKey,
+        "Authorization": `Bearer ${supabasePublishableKey}`
+      }
+    });
+    if (!response.ok) throw new Error(`CMS ${table} request failed: ${response.status}`);
+    return response.json();
+  };
+
+  const applyHeroTitle = (title) => {
+    const target = document.querySelector('[data-cms="hero.title"]');
+    if (!target || !title) return;
+    const bayAreaText = " in the Bay Area";
+    if (title.endsWith(bayAreaText)) {
+      target.textContent = title.slice(0, -bayAreaText.length);
+      const span = document.createElement("span");
+      span.textContent = bayAreaText;
+      target.appendChild(span);
+      return;
+    }
+    target.textContent = title;
+  };
+
+  const applyPublicSettings = (settings) => {
+    const values = Object.fromEntries(settings.map((row) => [row.setting_key, row.setting_value]));
+    const businessPhone = values.business_phone || defaultDisplayPhone;
+    const businessEmail = values.business_email || "";
+    smsNumber = normalizePhone(values.sms_number || businessPhone);
+    whatsappNumber = normalizePhone(values.whatsapp_number || businessPhone);
+    const phoneText = formatPhone(businessPhone);
+
+    document.querySelectorAll("[data-business-phone]").forEach((link) => {
+      link.textContent = phoneText;
+      link.setAttribute("href", `tel:+${normalizePhone(businessPhone)}`);
+    });
+    document.querySelectorAll("[data-business-phone-placeholder]").forEach((input) => {
+      input.setAttribute("placeholder", phoneText);
+    });
+    document.querySelectorAll("[data-sms-link]").forEach((link) => {
+      link.setAttribute("href", `sms:+${smsNumber}?body=${encodeURIComponent("Hello, I would like an exact cleaning quote. I can send photos.")}`);
+    });
+    document.querySelectorAll("[data-whatsapp-link]").forEach((link) => {
+      link.setAttribute("href", `https://wa.me/${whatsappNumber}?text=${encodeURIComponent("Hello, I would like a cleaning quote. I can send photos.")}`);
+    });
+    document.querySelectorAll("[data-business-email]").forEach((link) => {
+      link.textContent = businessEmail;
+      link.setAttribute("href", `mailto:${businessEmail}`);
+    });
+  };
+
+  const applyHomepageContent = (content) => {
+    const values = Object.fromEntries(content.map((row) => [`${row.section_key}.${row.content_key}`, row.content_value]));
+    applyHeroTitle(values["hero.title"]);
+    const subtitle = document.querySelector('[data-cms="hero.subtitle"]');
+    if (subtitle && values["hero.subtitle"]) subtitle.textContent = values["hero.subtitle"];
+    const cta = document.querySelector('[data-cms="hero.cta_text"]');
+    if (cta && values["hero.cta_text"]) cta.textContent = values["hero.cta_text"];
+  };
+
+  const applyFaqs = (faqs) => {
+    const faqGrid = document.querySelector("[data-faq-grid]");
+    const activeFaqs = faqs.filter((faq) => faq.is_active);
+    if (!faqGrid || activeFaqs.length === 0) return;
+    faqGrid.innerHTML = activeFaqs.map((faq, index) => `
+      <details ${index === 0 ? "open" : ""}>
+        <summary>${escapeCmsText(faq.question)}</summary>
+        <p>${escapeCmsText(faq.answer)}</p>
+      </details>
+    `).join("");
+  };
+
+  const loadPublicCmsContent = async () => {
+    try {
+      const [settings, homepageContent, faqRows] = await Promise.all([
+        cmsRequest("site_settings", "?select=setting_key,setting_value"),
+        cmsRequest("homepage_content", "?select=section_key,content_key,content_value"),
+        cmsRequest("faqs", "?select=id,question,answer,sort_order,is_active&is_active=eq.true&order=sort_order.asc")
+      ]);
+      applyPublicSettings(settings);
+      applyHomepageContent(homepageContent);
+      applyFaqs(faqRows);
+      updateEstimateLinks();
+    } catch (error) {
+      console.error("Public CMS content was not loaded; using hardcoded fallback.", error);
     }
   };
 
@@ -586,8 +696,8 @@ if (calculator) {
       && window.matchMedia?.("(max-width: 1024px)").matches;
     return Boolean(userAgentMobile || mobileViewport || touchMobile);
   };
-  const buildSmsHref = () => `sms:+${phone}?body=${encodeURIComponent(buildEstimateMessage("sms"))}`;
-  const buildWhatsAppHref = () => `https://wa.me/${phone}?text=${encodeURIComponent(buildWhatsAppMessage())}`;
+  const buildSmsHref = () => `sms:+${smsNumber}?body=${encodeURIComponent(buildEstimateMessage("sms"))}`;
+  const buildWhatsAppHref = () => `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(buildWhatsAppMessage())}`;
 
   const openExternalHref = (href) => {
     const link = document.createElement("a");
@@ -874,4 +984,5 @@ if (calculator) {
   });
 
   renderAll();
+  loadPublicCmsContent();
 }
