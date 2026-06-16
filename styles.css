@@ -346,6 +346,11 @@ section { padding: 84px 0; }
   flex-direction: column;
   gap: 20px;
 }
+.service-description {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 700;
+}
 .price { font-size: 40px; font-weight: 950; color: var(--navy); letter-spacing: -0.04em; }
 .price small { font-size: 15px; color: var(--muted); font-weight: 700; }
 .check-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
@@ -807,6 +812,34 @@ label { font-weight: 800; color: var(--navy); font-size: 14px; }
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 22px;
 }
+.about-section {
+  background: white;
+}
+.about-panel {
+  display: grid;
+  grid-template-columns: .9fr 1.1fr;
+  gap: 36px;
+  align-items: start;
+  background: #f8fafc;
+  border: 1px solid var(--line);
+  border-radius: 28px;
+  padding: 34px;
+  box-shadow: var(--shadow-soft);
+}
+.about-panel h2 {
+  font-size: clamp(34px, 4vw, 48px);
+  letter-spacing: -0.04em;
+}
+.about-copy {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 22px;
+}
+.about-copy p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 18px;
+}
 .why-card {
   background: white;
   border: 1px solid var(--line);
@@ -1058,6 +1091,7 @@ details p { color: var(--muted); margin-bottom: 0; }
   .services-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .additional-services ul { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .project-grid, .why-grid, .review-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .about-panel { grid-template-columns: 1fr; }
   .booking-panel, .calculator-layout { grid-template-columns: 1fr; }
   .summary-card { position: static; }
   .quote-card { max-width: 620px; }

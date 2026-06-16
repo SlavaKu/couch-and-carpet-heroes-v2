@@ -65,6 +65,14 @@
             SMS number
             <input type="text" data-setting="sms_number" placeholder="16505196607">
           </label>
+          <label>
+            Business hours
+            <input type="text" data-setting="business_hours" placeholder="Mon-Sun: 8AM-8PM">
+          </label>
+          <label>
+            Service area description
+            <input type="text" data-setting="service_area_description" placeholder="Serving Mountain View and nearby Bay Area cities">
+          </label>
         </div>
       </section>
 
@@ -78,6 +86,10 @@
         </div>
         <div class="form-grid single">
           <label>
+            Hero eyebrow
+            <input type="text" data-homepage="hero.eyebrow">
+          </label>
+          <label>
             Hero title
             <input type="text" data-homepage="hero.title">
           </label>
@@ -90,6 +102,140 @@
             <input type="text" data-homepage="hero.cta_text">
           </label>
         </div>
+      </section>
+
+      <section class="admin-card">
+        <div class="card-head">
+          <div>
+            <h2>Services Section</h2>
+            <p>Edit service cards without changing calculator pricing.</p>
+          </div>
+          <button class="btn btn-primary" type="button" data-save-services>Save Services</button>
+        </div>
+        <div class="form-grid single">
+          <label>
+            Section title
+            <input type="text" data-homepage="services.title">
+          </label>
+          <label>
+            Section subtitle
+            <textarea data-homepage="services.subtitle" rows="3"></textarea>
+          </label>
+        </div>
+        <div class="faq-list" data-services-list></div>
+      </section>
+
+      <section class="admin-card">
+        <div class="card-head">
+          <div>
+            <h2>Why Choose Us</h2>
+            <p>Edit the trust section title, subtitle, and feature cards.</p>
+          </div>
+          <button class="btn btn-primary" type="button" data-save-why>Save Why Section</button>
+        </div>
+        <div class="form-grid single">
+          <label>
+            Section title
+            <input type="text" data-homepage="why.title">
+          </label>
+          <label>
+            Section subtitle
+            <textarea data-homepage="why.subtitle" rows="3"></textarea>
+          </label>
+        </div>
+        <div class="faq-list" data-why-list></div>
+      </section>
+
+      <section class="admin-card">
+        <div class="card-head">
+          <div>
+            <h2>About Section</h2>
+            <p>Edit the simple about content shown on the public website.</p>
+          </div>
+          <div class="card-actions">
+            <button class="btn btn-secondary" type="button" data-add-about>Add Paragraph</button>
+            <button class="btn btn-primary" type="button" data-save-about>Save About</button>
+          </div>
+        </div>
+        <div class="form-grid single">
+          <label>
+            About title
+            <input type="text" data-homepage="about.title">
+          </label>
+          <label>
+            About CTA text
+            <input type="text" data-homepage="about.cta_text">
+          </label>
+        </div>
+        <div class="faq-list" data-about-list></div>
+      </section>
+
+      <section class="admin-card">
+        <div class="card-head">
+          <div>
+            <h2>Contact Section</h2>
+            <p>Edit contact section text and repeated business details.</p>
+          </div>
+          <button class="btn btn-primary" type="button" data-save-contact>Save Contact</button>
+        </div>
+        <div class="form-grid single">
+          <label>
+            Section title
+            <input type="text" data-homepage="contact.title">
+          </label>
+          <label>
+            Description
+            <textarea data-homepage="contact.description" rows="4"></textarea>
+          </label>
+          <label>
+            Phone
+            <input type="text" data-setting="business_phone">
+          </label>
+          <label>
+            Email
+            <input type="email" data-setting="business_email">
+          </label>
+          <label>
+            Business hours
+            <input type="text" data-setting="business_hours">
+          </label>
+          <label>
+            Service area
+            <input type="text" data-setting="service_area_description">
+          </label>
+        </div>
+      </section>
+
+      <section class="admin-card">
+        <div class="card-head">
+          <div>
+            <h2>Footer</h2>
+            <p>Edit footer copy and social links.</p>
+          </div>
+          <div class="card-actions">
+            <button class="btn btn-secondary" type="button" data-add-social>Add Social Link</button>
+            <button class="btn btn-primary" type="button" data-save-footer>Save Footer</button>
+          </div>
+        </div>
+        <div class="form-grid single">
+          <label>
+            Footer description
+            <textarea data-homepage="footer.description" rows="3"></textarea>
+          </label>
+          <label>
+            Copyright text
+            <input type="text" data-homepage="footer.copyright">
+          </label>
+          <label>
+            Phone
+            <input type="text" data-setting="business_phone">
+          </label>
+          <label>
+            Email
+            <input type="email" data-setting="business_email">
+          </label>
+        </div>
+        <div class="faq-list" data-social-list></div>
       </section>
 
       <section class="admin-card">

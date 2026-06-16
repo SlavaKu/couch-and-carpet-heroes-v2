@@ -247,10 +247,17 @@ if (calculator) {
     target.textContent = title;
   };
 
+  const setCmsText = (selector, value) => {
+    const target = document.querySelector(`[data-cms="${selector}"]`);
+    if (target && value) target.textContent = value;
+  };
+
   const applyPublicSettings = (settings) => {
     const values = Object.fromEntries(settings.map((row) => [row.setting_key, row.setting_value]));
     const businessPhone = values.business_phone || defaultDisplayPhone;
     const businessEmail = values.business_email || "";
+    const businessHours = values.business_hours || "";
+    const serviceArea = values.service_area_description || "";
     smsNumber = normalizePhone(values.sms_number || businessPhone);
     whatsappNumber = normalizePhone(values.whatsapp_number || businessPhone);
     const phoneText = formatPhone(businessPhone);
@@ -272,15 +279,79 @@ if (calculator) {
       link.textContent = businessEmail;
       link.setAttribute("href", `mailto:${businessEmail}`);
     });
+    document.querySelectorAll("[data-business-hours]").forEach((target) => {
+      if (businessHours) target.textContent = businessHours;
+    });
+    document.querySelectorAll("[data-service-area]").forEach((target) => {
+      if (serviceArea) target.textContent = serviceArea;
+    });
   };
 
   const applyHomepageContent = (content) => {
     const values = Object.fromEntries(content.map((row) => [`${row.section_key}.${row.content_key}`, row.content_value]));
     applyHeroTitle(values["hero.title"]);
-    const subtitle = document.querySelector('[data-cms="hero.subtitle"]');
-    if (subtitle && values["hero.subtitle"]) subtitle.textContent = values["hero.subtitle"];
-    const cta = document.querySelector('[data-cms="hero.cta_text"]');
-    if (cta && values["hero.cta_text"]) cta.textContent = values["hero.cta_text"];
+    Object.entries(values).forEach(([selector, value]) => {
+      if (selector !== "hero.title") setCmsText(selector, value);
+    });
+  };
+
+  const serviceMeta = {
+    carpet_cleaning: { price: "$80", jump: "carpet", checks: ["Room-by-room estimate", "Stairs available", "Odor treatment available"] },
+    sofa_cleaning: { price: "$160", jump: "upholstery", checks: ["Deep fabric cleaning", "Stain treatment", "Optional odor treatment"] },
+    mattress_cleaning: { price: "$140", jump: "mattress", checks: ["Deep sanitation", "Spot treatment", "Odor removal available"] }
+  };
+
+  const applyServices = (services) => {
+    const servicesGrid = document.querySelector("[data-services-grid]");
+    const activeServices = services.filter((service) => service.is_active);
+    if (!servicesGrid || activeServices.length === 0) return;
+    servicesGrid.innerHTML = activeServices.map((service) => {
+      const meta = serviceMeta[service.service_key] || serviceMeta.carpet_cleaning;
+      return `
+        <article class="service-card" data-service-card="${escapeCmsText(service.service_key)}">
+          <div class="service-top">
+            <h3>${escapeCmsText(service.title)}</h3>
+          </div>
+          <div class="service-body">
+            <div><span class="price">${meta.price}</span> <small>starting</small></div>
+            <p class="service-description">${escapeCmsText(service.description)}</p>
+            <ul class="check-list">
+              ${meta.checks.map((item) => `<li>${escapeCmsText(item)}</li>`).join("")}
+            </ul>
+            <a class="btn btn-primary" href="#estimate" data-jump-service="${meta.jump}">${escapeCmsText(service.button_text)}</a>
+          </div>
+        </article>
+      `;
+    }).join("");
+  };
+
+  const applyWhyFeatures = (features) => {
+    const whyGrid = document.querySelector("[data-why-grid]");
+    const activeFeatures = features.filter((feature) => feature.is_active);
+    if (!whyGrid || activeFeatures.length === 0) return;
+    whyGrid.innerHTML = activeFeatures.map((feature) => `
+      <article class="why-card">
+        <div class="service-icon">${escapeCmsText(feature.icon_text)}</div>
+        <h3>${escapeCmsText(feature.title)}</h3>
+        <p>${escapeCmsText(feature.description)}</p>
+      </article>
+    `).join("");
+  };
+
+  const applyAboutParagraphs = (paragraphs) => {
+    const aboutRoot = document.querySelector("[data-about-paragraphs]");
+    const activeParagraphs = paragraphs.filter((paragraph) => paragraph.is_active);
+    if (!aboutRoot || activeParagraphs.length === 0) return;
+    aboutRoot.innerHTML = activeParagraphs.map((paragraph) => `<p>${escapeCmsText(paragraph.paragraph_text)}</p>`).join("");
+  };
+
+  const applySocialLinks = (links) => {
+    const socialRoot = document.querySelector("[data-social-links]");
+    const activeLinks = links.filter((link) => link.is_active && link.url && link.platform);
+    if (!socialRoot) return;
+    socialRoot.innerHTML = activeLinks.map((link) => `
+      <a href="${escapeCmsText(link.url)}" target="_blank" rel="noopener">${escapeCmsText(link.platform)}</a>
+    `).join("");
   };
 
   const applyFaqs = (faqs) => {
@@ -297,13 +368,21 @@ if (calculator) {
 
   const loadPublicCmsContent = async () => {
     try {
-      const [settings, homepageContent, faqRows] = await Promise.all([
+      const [settings, homepageContent, serviceRows, whyRows, aboutRows, socialRows, faqRows] = await Promise.all([
         cmsRequest("site_settings", "?select=setting_key,setting_value"),
         cmsRequest("homepage_content", "?select=section_key,content_key,content_value"),
+        cmsRequest("services", "?select=service_key,title,description,button_text,sort_order,is_active&is_active=eq.true&order=sort_order.asc"),
+        cmsRequest("why_features", "?select=title,description,icon_text,sort_order,is_active&is_active=eq.true&order=sort_order.asc"),
+        cmsRequest("about_paragraphs", "?select=paragraph_text,sort_order,is_active&is_active=eq.true&order=sort_order.asc"),
+        cmsRequest("social_links", "?select=platform,url,sort_order,is_active&is_active=eq.true&order=sort_order.asc"),
         cmsRequest("faqs", "?select=id,question,answer,sort_order,is_active&is_active=eq.true&order=sort_order.asc")
       ]);
       applyPublicSettings(settings);
       applyHomepageContent(homepageContent);
+      applyServices(serviceRows);
+      applyWhyFeatures(whyRows);
+      applyAboutParagraphs(aboutRows);
+      applySocialLinks(socialRows);
       applyFaqs(faqRows);
       updateEstimateLinks();
     } catch (error) {
@@ -974,13 +1053,13 @@ if (calculator) {
     document.getElementById(id)?.addEventListener("input", updateEstimateLinks);
   });
 
-  document.querySelectorAll("[data-jump-service]").forEach((link) => {
-    link.addEventListener("click", () => {
-      const category = link.dataset.jumpService;
-      state.selected.add(category);
-      ensureItem(category);
-      renderAll();
-    });
+  document.addEventListener("click", (event) => {
+    const link = event.target.closest("[data-jump-service]");
+    if (!link) return;
+    const category = link.dataset.jumpService;
+    state.selected.add(category);
+    ensureItem(category);
+    renderAll();
   });
 
   renderAll();

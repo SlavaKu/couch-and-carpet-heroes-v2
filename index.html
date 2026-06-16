@@ -53,7 +53,7 @@
     <section class="hero" id="home">
       <div class="container hero-grid">
         <div>
-          <div class="eyebrow">Local cleaning pros</div>
+          <div class="eyebrow" data-cms="hero.eyebrow">Local cleaning pros</div>
           <h1 data-cms="hero.title">Professional Sofa & Carpet Cleaning <span>in the Bay Area</span></h1>
           <p class="lead" data-cms="hero.subtitle">Deep cleaning for sofas, carpets, rugs, mattresses and upholstery. Eco-friendly, safe for kids and pets, with clear estimated pricing before we start.</p>
 
@@ -141,17 +141,18 @@
     <section id="services">
       <div class="container">
         <div class="section-head">
-          <h2>Cleaning Services</h2>
-          <p>Simple service cards, clear starting prices and an instant estimate builder for residential cleaning.</p>
+          <h2 data-cms="services.title">Cleaning Services</h2>
+          <p data-cms="services.subtitle">Simple service cards, clear starting prices and an instant estimate builder for residential cleaning.</p>
         </div>
 
-        <div class="services-grid">
-          <article class="service-card">
+        <div class="services-grid" data-services-grid>
+          <article class="service-card" data-service-card="carpet_cleaning">
             <div class="service-top">
               <h3>Carpet Cleaning</h3>
             </div>
             <div class="service-body">
               <div><span class="price">$80</span> <small>starting</small></div>
+              <p class="service-description">Hot water extraction, fast drying, and odor treatment available.</p>
               <ul class="check-list">
                 <li>Room-by-room estimate</li>
                 <li>Stairs available</li>
@@ -161,12 +162,13 @@
             </div>
           </article>
 
-          <article class="service-card">
+          <article class="service-card" data-service-card="sofa_cleaning">
             <div class="service-top">
               <h3>Sofa Cleaning</h3>
             </div>
             <div class="service-body">
               <div><span class="price">$160</span> <small>starting</small></div>
+              <p class="service-description">Deep fabric cleaning, stain treatment, and optional fabric protection.</p>
               <ul class="check-list">
                 <li>Deep fabric cleaning</li>
                 <li>Stain treatment</li>
@@ -176,12 +178,13 @@
             </div>
           </article>
 
-          <article class="service-card">
+          <article class="service-card" data-service-card="mattress_cleaning">
             <div class="service-top">
               <h3>Mattress Cleaning</h3>
             </div>
             <div class="service-body">
               <div><span class="price">$140</span> <small>starting</small></div>
+              <p class="service-description">Deep sanitation, spot treatment, and odor removal available.</p>
               <ul class="check-list">
                 <li>Deep sanitation</li>
                 <li>Spot treatment</li>
@@ -336,8 +339,8 @@
     <section class="booking-band" id="contact">
       <div class="container booking-panel">
         <div class="booking-copy">
-          <h2>Book Your Cleaning in 2 Minutes</h2>
-          <p>Send your service type, city and photos. We reply with a clear estimate and available time windows. Final price is confirmed on-site before work starts.</p>
+          <h2 data-cms="contact.title">Book Your Cleaning in 2 Minutes</h2>
+          <p data-cms="contact.description">Send your service type, city and photos. We reply with a clear estimate and available time windows. Final price is confirmed on-site before work starts.</p>
 
           <div class="steps">
             <div class="step"><strong>1. Send photos</strong><span>Sofa, carpet, rug or mattress.</span></div>
@@ -412,14 +415,32 @@
       </div>
     </section>
 
+    <section class="about-section" id="about">
+      <div class="container">
+        <div class="about-panel">
+          <div>
+            <div class="eyebrow">About us</div>
+            <h2 data-cms="about.title">About Couch and Carpet Heroes</h2>
+          </div>
+          <div>
+            <div class="about-copy" data-about-paragraphs>
+              <p>Couch and Carpet Heroes helps Bay Area homes and businesses keep sofas, carpets, rugs, mattresses and upholstery clean, fresh and ready to use.</p>
+              <p>We focus on clear communication, careful inspection, eco-friendly products and practical estimates before work starts.</p>
+            </div>
+            <a class="btn btn-primary" href="#estimate" data-cms="about.cta_text">Get Estimate</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section id="why">
       <div class="container">
         <div class="section-head">
-          <h2>Why Choose Us</h2>
-          <p>Trust blocks are practical: what matters to the customer before booking.</p>
+          <h2 data-cms="why.title">Why Choose Us</h2>
+          <p data-cms="why.subtitle">Trust blocks are practical: what matters to the customer before booking.</p>
         </div>
 
-        <div class="why-grid">
+        <div class="why-grid" data-why-grid>
           <article class="why-card"><div class="service-icon">✓</div><h3>Careful Inspection</h3><p>We check fabric type, stains and possible risks before cleaning.</p></article>
           <article class="why-card"><div class="service-icon">♻</div><h3>Eco-Friendly Products</h3><p>Safe cleaning products for homes with kids and pets.</p></article>
           <article class="why-card"><div class="service-icon">⏱</div><h3>Fast Scheduling</h3><p>Easy booking by text, photos and clear time windows.</p></article>
@@ -479,7 +500,7 @@
       <div class="footer-grid">
         <div>
           <img class="footer-logo" src="assets/logo-couch-carpet-heroes.png" alt="Couch and Carpet Heroes logo">
-          <p>Professional sofa, carpet, rug, mattress and upholstery cleaning for homes and businesses.</p>
+          <p data-cms="footer.description">Professional sofa, carpet, rug, mattress and upholstery cleaning for homes and businesses.</p>
         </div>
         <div>
           <h3>Quick Links</h3>
@@ -504,14 +525,16 @@
           <h3>Get In Touch</h3>
           <div class="footer-links">
             <a href="tel:+16505196607" data-business-phone>(650) 519-6607</a>
+            <a href="mailto:info@ccheroes-pro.com" data-business-email>info@ccheroes-pro.com</a>
             <a href="sms:+16505196607?body=Hello%2C%20I%20would%20like%20an%20exact%20cleaning%20quote.%20I%20can%20send%20photos." data-sms-link>Text us photos</a>
             <a href="https://wa.me/16505196607?text=Hello%2C%20I%20would%20like%20a%20cleaning%20quote.%20I%20can%20send%20photos." target="_blank" rel="noopener" data-whatsapp-link>WhatsApp</a>
-            <span>Serving Mountain View & nearby cities</span>
-            <span>Mon-Sun: 8AM-8PM</span>
+            <span data-service-area>Serving Mountain View & nearby cities</span>
+            <span data-business-hours>Mon-Sun: 8AM-8PM</span>
+            <div class="footer-links" data-social-links></div>
           </div>
         </div>
       </div>
-      <div class="footer-bottom">© 2026 Couch and Carpet Heroes. All rights reserved.</div>
+      <div class="footer-bottom" data-cms="footer.copyright">© 2026 Couch and Carpet Heroes. All rights reserved.</div>
     </div>
   </footer>
 
