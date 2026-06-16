@@ -297,8 +297,9 @@ function renderWhyFeatures() {
         </label>
       </div>
       <label>
-        Icon text
+        Icon / Emoji
         <input type="text" data-why-field="icon_text" value="${escapeHtml(feature.icon_text || "")}">
+        <small class="field-help">Use one emoji or short symbol, for example: ✓, ♻, ⏱, $, ★, ☏</small>
       </label>
       <label>
         Title
@@ -624,7 +625,7 @@ async function loadAdminData() {
     return;
   }
 
-  setMessage(statusMessage, "Content loaded.", "success");
+  setMessage(statusMessage, "");
 }
 
 async function handleSave(action, successText) {
