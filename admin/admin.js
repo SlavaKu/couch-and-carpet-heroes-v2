@@ -113,6 +113,10 @@ let faqs = [];
 let activeIconFeatureId = "";
 let selectedIconFile = null;
 let selectedIconPreviewUrl = "";
+let isAdminLoading = false;
+let contentLoaded = false;
+let whyFeaturesLoadedFromSupabase = false;
+let adminLoadPromise = null;
 
 const setMessage = (element, message, type = "") => {
   if (!element) return;
@@ -282,6 +286,7 @@ async function saveServices() {
 }
 
 async function loadWhyFeatures() {
+  whyFeaturesLoadedFromSupabase = false;
   whyFeatures = fallbackWhyFeatures.map((feature) => ({ ...feature }));
   renderWhyFeatures();
 
@@ -292,6 +297,7 @@ async function loadWhyFeatures() {
 
   if (error) throw error;
   whyFeatures = data?.length ? data : fallbackWhyFeatures.map((feature) => ({ ...feature }));
+  whyFeaturesLoadedFromSupabase = Boolean(data?.length);
   renderWhyFeatures();
 }
 
@@ -617,31 +623,50 @@ async function deleteFaq(id) {
 }
 
 async function loadAdminData() {
-  setMessage(statusMessage, "Loading content...");
-  const loaders = [
-    ["Business Settings", loadSettings],
-    ["Homepage Content", loadHomepageContent],
-    ["Services", loadServices],
-    ["Why Choose Us", loadWhyFeatures],
-    ["About", loadAboutParagraphs],
-    ["Footer Social Links", loadSocialLinks],
-    ["FAQs", loadFaqs]
-  ];
-  const results = await Promise.allSettled(loaders.map(([, loader]) => loader()));
-  const failed = results
-    .map((result, index) => ({ result, name: loaders[index][0] }))
-    .filter((entry) => entry.result.status === "rejected");
+  if (adminLoadPromise) return adminLoadPromise;
+  if (contentLoaded && whyFeaturesLoadedFromSupabase) return Promise.resolve();
 
-  failed.forEach((entry) => {
-    console.error(`${entry.name} failed to load`, entry.result.reason);
-  });
+  adminLoadPromise = (async () => {
+    isAdminLoading = true;
+    contentLoaded = false;
+    whyFeaturesLoadedFromSupabase = false;
+    setMessage(statusMessage, "Loading content...");
 
-  if (failed.length) {
-    setMessage(statusMessage, "Some content could not be loaded. Please refresh or check Supabase.", "error");
-    return;
+    const loaders = [
+      ["Business Settings", loadSettings, true],
+      ["Homepage Content", loadHomepageContent, true],
+      ["Services", loadServices, false],
+      ["Why Choose Us", loadWhyFeatures, true],
+      ["About", loadAboutParagraphs, false],
+      ["Footer Social Links", loadSocialLinks, false],
+      ["FAQs", loadFaqs, false]
+    ];
+    const results = await Promise.allSettled(loaders.map(([, loader]) => loader()));
+    const failed = results
+      .map((result, index) => ({ result, name: loaders[index][0], critical: loaders[index][2] }))
+      .filter((entry) => entry.result.status === "rejected");
+
+    failed.forEach((entry) => {
+      console.error(`${entry.name} failed to load`, entry.result.reason);
+    });
+
+    const criticalFailed = failed.some((entry) => entry.critical);
+    isAdminLoading = false;
+    contentLoaded = !criticalFailed;
+
+    if (criticalFailed) {
+      setMessage(statusMessage, "Some content could not be loaded. Please refresh or check Supabase.", "error");
+      return;
+    }
+
+    setMessage(statusMessage, "Content loaded successfully", "success");
+  })();
+
+  try {
+    await adminLoadPromise;
+  } finally {
+    adminLoadPromise = null;
   }
-
-  setMessage(statusMessage, "Content loaded successfully", "success");
 }
 
 async function handleSave(action, successText) {
@@ -714,6 +739,11 @@ const safeFileName = (name) => name
 async function uploadIconForActiveFeature() {
   if (!activeIconFeatureId || !selectedIconFile) {
     setMessage(iconModalMessage, "Choose an icon file first.", "error");
+    return;
+  }
+
+  if (isAdminLoading || !contentLoaded || !whyFeaturesLoadedFromSupabase) {
+    setMessage(iconModalMessage, "Save is available after Supabase content loads.", "error");
     return;
   }
 
