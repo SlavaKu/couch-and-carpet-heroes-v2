@@ -45,6 +45,59 @@ const homepageFields = [
 
 const homepageBySelector = Object.fromEntries(homepageFields.map((field) => [field.selector, field]));
 
+const fallbackSettings = {
+  business_phone: "650-519-6607",
+  business_email: "info@ccheroes-pro.com",
+  whatsapp_number: "16505196607",
+  sms_number: "16505196607",
+  business_hours: "Mon-Sun: 8AM-8PM",
+  service_area_description: "Serving Mountain View and nearby Bay Area cities"
+};
+
+const fallbackHomepage = {
+  "hero.eyebrow": "Local cleaning pros",
+  "hero.title": "Professional Sofa & Carpet Cleaning in the Bay Area",
+  "hero.subtitle": "Deep cleaning for sofas, carpets, rugs, mattresses and upholstery. Eco-friendly, safe for kids and pets, with clear estimated pricing before we start.",
+  "hero.cta_text": "Get Instant Estimate",
+  "services.title": "Cleaning Services",
+  "services.subtitle": "Simple service cards, clear starting prices and an instant estimate builder for residential cleaning.",
+  "why.title": "Why Choose Us",
+  "why.subtitle": "Trust blocks are practical: what matters to the customer before booking.",
+  "about.title": "About Couch and Carpet Heroes",
+  "about.cta_text": "Get Estimate",
+  "contact.title": "Book Your Cleaning in 2 Minutes",
+  "contact.description": "Send your service type, city and photos. We reply with a clear estimate and available time windows. Final price is confirmed on-site before work starts.",
+  "footer.description": "Professional sofa, carpet, rug, mattress and upholstery cleaning for homes and businesses.",
+  "footer.copyright": "© 2026 Couch and Carpet Heroes. All rights reserved."
+};
+
+const fallbackServices = [
+  { id: "fallback-carpet", service_key: "carpet_cleaning", title: "Carpet Cleaning", description: "Hot water extraction, fast drying, and odor treatment available.", button_text: "Estimate Carpet Cleaning", sort_order: 1, is_active: true },
+  { id: "fallback-sofa", service_key: "sofa_cleaning", title: "Sofa Cleaning", description: "Deep fabric cleaning, stain treatment, and optional fabric protection.", button_text: "Estimate Sofa Cleaning", sort_order: 2, is_active: true },
+  { id: "fallback-mattress", service_key: "mattress_cleaning", title: "Mattress Cleaning", description: "Deep sanitation, spot treatment, and odor removal available.", button_text: "Estimate Mattress Cleaning", sort_order: 3, is_active: true }
+];
+
+const fallbackWhyFeatures = [
+  { id: "fallback-inspection", feature_key: "inspection", title: "Careful Inspection", description: "We check fabric type, stains and possible risks before cleaning.", icon_text: "✓", sort_order: 1, is_active: true },
+  { id: "fallback-eco", feature_key: "eco_friendly", title: "Eco-Friendly Products", description: "Safe cleaning products for homes with kids and pets.", icon_text: "♻", sort_order: 2, is_active: true },
+  { id: "fallback-scheduling", feature_key: "fast_scheduling", title: "Fast Scheduling", description: "Easy booking by text, photos and clear time windows.", icon_text: "⏱", sort_order: 3, is_active: true },
+  { id: "fallback-pricing", feature_key: "clear_pricing", title: "Clear Pricing", description: "Estimate before arrival, final price confirmed on-site.", icon_text: "$", sort_order: 4, is_active: true },
+  { id: "fallback-local", feature_key: "local_service", title: "Local Service", description: "Serving Mountain View and nearby Bay Area cities.", icon_text: "★", sort_order: 5, is_active: true },
+  { id: "fallback-text", feature_key: "text_friendly", title: "Text Friendly", description: "Send photos by text for a faster and more accurate quote.", icon_text: "☏", sort_order: 6, is_active: true }
+];
+
+const fallbackAboutParagraphs = [
+  { id: "fallback-about-1", paragraph_text: "Couch and Carpet Heroes helps Bay Area homes and businesses keep sofas, carpets, rugs, mattresses and upholstery clean, fresh and ready to use.", sort_order: 1, is_active: true },
+  { id: "fallback-about-2", paragraph_text: "We focus on clear communication, careful inspection, eco-friendly products and practical estimates before work starts.", sort_order: 2, is_active: true }
+];
+
+const fallbackFaqs = [
+  { id: "fallback-faq-1", question: "Do you need photos before giving a price?", answer: "Photos help us give a more accurate estimate, especially for sofas, rugs, stains and odor issues.", sort_order: 1, is_active: true },
+  { id: "fallback-faq-2", question: "Are your products safe for kids and pets?", answer: "We use eco-friendly products and choose the cleaning method based on fabric type and soil level.", sort_order: 2, is_active: true },
+  { id: "fallback-faq-3", question: "Can all stains be removed?", answer: "Many stains improve or disappear, but some old or chemical stains may remain. We explain the risk before starting.", sort_order: 3, is_active: true },
+  { id: "fallback-faq-4", question: "What areas do you serve?", answer: "Mountain View and nearby Bay Area cities, including Palo Alto, Sunnyvale, Los Altos, Cupertino and San Jose areas.", sort_order: 4, is_active: true }
+];
+
 let services = [];
 let whyFeatures = [];
 let aboutParagraphs = [];
@@ -83,6 +136,8 @@ const setAllSettingInputs = (key, value) => {
 };
 
 async function loadSettings() {
+  settingKeys.forEach((key) => setAllSettingInputs(key, fallbackSettings[key] || ""));
+
   const { data, error } = await client
     .from("site_settings")
     .select("setting_key, setting_value")
@@ -91,7 +146,7 @@ async function loadSettings() {
   if (error) throw error;
 
   const values = Object.fromEntries((data || []).map((row) => [row.setting_key, row.setting_value]));
-  settingKeys.forEach((key) => setAllSettingInputs(key, values[key] || ""));
+  settingKeys.forEach((key) => setAllSettingInputs(key, values[key] || fallbackSettings[key] || ""));
 }
 
 async function saveSettings(keys = settingKeys) {
@@ -109,6 +164,11 @@ async function saveSettings(keys = settingKeys) {
 }
 
 async function loadHomepageContent() {
+  homepageFields.forEach((field) => {
+    const input = document.querySelector(`[data-homepage="${field.selector}"]`);
+    if (input) input.value = fallbackHomepage[field.selector] || "";
+  });
+
   const { data, error } = await client
     .from("homepage_content")
     .select("section_key, content_key, content_value");
@@ -118,7 +178,7 @@ async function loadHomepageContent() {
   const values = Object.fromEntries((data || []).map((row) => [`${row.section_key}.${row.content_key}`, row.content_value]));
   homepageFields.forEach((field) => {
     const input = document.querySelector(`[data-homepage="${field.selector}"]`);
-    if (input) input.value = values[field.selector] || "";
+    if (input) input.value = values[field.selector] || fallbackHomepage[field.selector] || "";
   });
 }
 
@@ -140,13 +200,16 @@ async function saveHomepageContent(selectors = homepageFields.map((field) => fie
 }
 
 async function loadServices() {
+  services = fallbackServices.map((service) => ({ ...service }));
+  renderServices();
+
   const { data, error } = await client
     .from("services")
     .select("id, service_key, title, description, button_text, sort_order, is_active")
     .order("sort_order", { ascending: true });
 
   if (error) throw error;
-  services = data || [];
+  services = data?.length ? data : fallbackServices.map((service) => ({ ...service }));
   renderServices();
 }
 
@@ -209,13 +272,16 @@ async function saveServices() {
 }
 
 async function loadWhyFeatures() {
+  whyFeatures = fallbackWhyFeatures.map((feature) => ({ ...feature }));
+  renderWhyFeatures();
+
   const { data, error } = await client
     .from("why_features")
     .select("id, feature_key, title, description, icon_text, sort_order, is_active")
     .order("sort_order", { ascending: true });
 
   if (error) throw error;
-  whyFeatures = data || [];
+  whyFeatures = data?.length ? data : fallbackWhyFeatures.map((feature) => ({ ...feature }));
   renderWhyFeatures();
 }
 
@@ -278,13 +344,16 @@ async function saveWhyFeatures() {
 }
 
 async function loadAboutParagraphs() {
+  aboutParagraphs = fallbackAboutParagraphs.map((paragraph) => ({ ...paragraph }));
+  renderAboutParagraphs();
+
   const { data, error } = await client
     .from("about_paragraphs")
     .select("id, paragraph_text, sort_order, is_active")
     .order("sort_order", { ascending: true });
 
   if (error) throw error;
-  aboutParagraphs = data || [];
+  aboutParagraphs = data?.length ? data : fallbackAboutParagraphs.map((paragraph) => ({ ...paragraph }));
   renderAboutParagraphs();
 }
 
@@ -356,6 +425,9 @@ async function deleteAboutParagraph(id) {
 }
 
 async function loadSocialLinks() {
+  socialLinks = [];
+  renderSocialLinks();
+
   const { data, error } = await client
     .from("social_links")
     .select("id, platform, url, sort_order, is_active")
@@ -440,13 +512,16 @@ async function deleteSocialLink(id) {
 }
 
 async function loadFaqs() {
+  faqs = fallbackFaqs.map((faq) => ({ ...faq }));
+  renderFaqs();
+
   const { data, error } = await client
     .from("faqs")
     .select("id, question, answer, sort_order, is_active")
     .order("sort_order", { ascending: true });
 
   if (error) throw error;
-  faqs = data || [];
+  faqs = data?.length ? data : fallbackFaqs.map((faq) => ({ ...faq }));
   renderFaqs();
 }
 
@@ -526,15 +601,29 @@ async function deleteFaq(id) {
 
 async function loadAdminData() {
   setMessage(statusMessage, "Loading content...");
-  await Promise.all([
-    loadSettings(),
-    loadHomepageContent(),
-    loadServices(),
-    loadWhyFeatures(),
-    loadAboutParagraphs(),
-    loadSocialLinks(),
-    loadFaqs()
-  ]);
+  const loaders = [
+    ["Business Settings", loadSettings],
+    ["Homepage Content", loadHomepageContent],
+    ["Services", loadServices],
+    ["Why Choose Us", loadWhyFeatures],
+    ["About", loadAboutParagraphs],
+    ["Footer Social Links", loadSocialLinks],
+    ["FAQs", loadFaqs]
+  ];
+  const results = await Promise.allSettled(loaders.map(([, loader]) => loader()));
+  const failed = results
+    .map((result, index) => ({ result, name: loaders[index][0] }))
+    .filter((entry) => entry.result.status === "rejected");
+
+  failed.forEach((entry) => {
+    console.error(`${entry.name} failed to load`, entry.result.reason);
+  });
+
+  if (failed.length) {
+    setMessage(statusMessage, `Loaded with fallback content. Check: ${failed.map((entry) => entry.name).join(", ")}.`, "error");
+    return;
+  }
+
   setMessage(statusMessage, "Content loaded.", "success");
 }
 
