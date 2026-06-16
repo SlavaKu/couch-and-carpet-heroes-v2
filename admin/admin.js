@@ -299,8 +299,9 @@ function renderWhyFeatures() {
       <label>
         Icon / Emoji
         <input type="text" data-why-field="icon_text" value="${escapeHtml(feature.icon_text || "")}">
-        <small class="field-help">Use one emoji or short symbol, for example: ✓, ♻, ⏱, $, ★, ☏</small>
+        <small class="field-help">Use one emoji or short symbol.</small>
       </label>
+      <button class="btn btn-secondary" type="button" data-add-icon="${feature.id}">Add icon</button>
       <label>
         Title
         <input type="text" data-why-field="title" value="${escapeHtml(feature.title || "")}">
@@ -621,11 +622,11 @@ async function loadAdminData() {
   });
 
   if (failed.length) {
-    setMessage(statusMessage, `Loaded with fallback content. Check: ${failed.map((entry) => entry.name).join(", ")}.`, "error");
+    setMessage(statusMessage, "Some content could not be loaded. Please refresh or check Supabase.", "error");
     return;
   }
 
-  setMessage(statusMessage, "");
+  setMessage(statusMessage, "Content loaded", "success");
 }
 
 async function handleSave(action, successText) {
@@ -747,6 +748,20 @@ document.querySelector("[data-add-faq]").addEventListener("click", () => {
     is_active: true
   });
   renderFaqs();
+});
+
+lists.why.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-add-icon]");
+  if (!button) return;
+  const card = button.closest("[data-why-id]");
+  const input = card?.querySelector('[data-why-field="icon_text"]');
+  if (!input) return;
+  const nextIcon = window.prompt("Type or paste one emoji or short symbol.", input.value);
+  if (nextIcon === null) return;
+  input.value = nextIcon.trim();
+  const item = whyFeatures.find((feature) => feature.id === card.dataset.whyId);
+  if (item) item.icon_text = input.value;
+  input.focus();
 });
 
 lists.about.addEventListener("click", async (event) => {
