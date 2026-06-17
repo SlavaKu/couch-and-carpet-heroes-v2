@@ -330,6 +330,7 @@ function renderWhyFeatures() {
       <div class="icon-current" data-icon-current>
         ${feature.icon_url ? `<img src="${escapeHtml(feature.icon_url)}" alt="">` : `<span>${escapeHtml(feature.icon_text || "")}</span>`}
       </div>
+      ${feature.icon_url ? `<button class="btn btn-secondary icon-remove-btn" type="button" data-remove-icon="${feature.id}">Remove uploaded icon</button>` : ""}
       <button class="btn btn-secondary" type="button" data-add-icon="${feature.id}">Add icon</button>
       <label>
         Title
@@ -923,6 +924,20 @@ document.querySelector("[data-add-faq]").addEventListener("click", () => {
 });
 
 lists.why.addEventListener("click", (event) => {
+  const removeButton = event.target.closest("[data-remove-icon]");
+  if (removeButton) {
+    const card = removeButton.closest("[data-why-id]");
+    const item = whyFeatures.find((feature) => feature.id === removeButton.dataset.removeIcon);
+    const iconText = card?.querySelector('[data-why-field="icon_text"]')?.value.trim() || item?.icon_text || "";
+    const hiddenInput = card?.querySelector('[data-why-field="icon_url"]');
+    const currentPreview = card?.querySelector("[data-icon-current]");
+    if (item) item.icon_url = "";
+    if (hiddenInput) hiddenInput.value = "";
+    if (currentPreview) currentPreview.innerHTML = `<span>${escapeHtml(iconText)}</span>`;
+    removeButton.remove();
+    return;
+  }
+
   const button = event.target.closest("[data-add-icon]");
   if (!button) return;
   openIconModal(button.dataset.addIcon);

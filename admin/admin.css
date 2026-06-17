@@ -283,6 +283,14 @@ textarea:focus {
   object-fit: contain;
 }
 
+.icon-remove-btn {
+  color: var(--red);
+  border-color: #fecaca;
+  justify-self: start;
+  min-height: 40px;
+  padding: 9px 16px;
+}
+
 .icon-modal[hidden] {
   display: none;
 }
