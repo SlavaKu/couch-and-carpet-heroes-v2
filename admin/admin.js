@@ -1,4 +1,5 @@
 const SUPABASE_URL = "https://gxtrpycepqnecoyxnonl.supabase.co";
+const SUPABASE_REST_URL = "https://gxtrpycepqnecoyxnonl.supabase.co/rest/v1";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_Sx1dm7TzcIntHfB6lrFctA_xoKF_EYU";
 
 const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
@@ -130,11 +131,31 @@ const showAdmin = (isLoggedIn) => {
   adminPanel.hidden = !isLoggedIn;
 };
 
+const resetAdminState = () => {
+  isAdminLoading = false;
+  contentLoaded = false;
+  whyFeaturesLoadedFromSupabase = false;
+  adminLoadPromise = null;
+  setMessage(statusMessage, "");
+  setMessage(loginMessage, "");
+};
+
 const escapeHtml = (value = "") => String(value)
   .replaceAll("&", "&amp;")
   .replaceAll("<", "&lt;")
   .replaceAll(">", "&gt;")
   .replaceAll('"', "&quot;");
+
+const adminCmsRequest = async (table, query = "") => {
+  const response = await fetch(`${SUPABASE_REST_URL}/${table}${query}`, {
+    headers: {
+      apikey: SUPABASE_PUBLISHABLE_KEY,
+      Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`
+    }
+  });
+  if (!response.ok) throw new Error(`CMS ${table} request failed: ${response.status}`);
+  return response.json();
+};
 
 const getSettingValue = (key) => document.querySelector(`[data-setting="${key}"]`)?.value.trim() || "";
 const getHomepageValue = (selector) => document.querySelector(`[data-homepage="${selector}"]`)?.value.trim() || "";
@@ -152,12 +173,7 @@ const setAllSettingInputs = (key, value) => {
 async function loadSettings() {
   settingKeys.forEach((key) => setAllSettingInputs(key, fallbackSettings[key] || ""));
 
-  const { data, error } = await client
-    .from("site_settings")
-    .select("setting_key, setting_value")
-    .in("setting_key", settingKeys);
-
-  if (error) throw error;
+  const data = await adminCmsRequest("site_settings", "?select=setting_key,setting_value");
 
   const values = Object.fromEntries((data || []).map((row) => [row.setting_key, row.setting_value]));
   settingKeys.forEach((key) => setAllSettingInputs(key, values[key] || fallbackSettings[key] || ""));
@@ -183,11 +199,7 @@ async function loadHomepageContent() {
     if (input) input.value = fallbackHomepage[field.selector] || "";
   });
 
-  const { data, error } = await client
-    .from("homepage_content")
-    .select("section_key, content_key, content_value");
-
-  if (error) throw error;
+  const data = await adminCmsRequest("homepage_content", "?select=section_key,content_key,content_value");
 
   const values = Object.fromEntries((data || []).map((row) => [`${row.section_key}.${row.content_key}`, row.content_value]));
   homepageFields.forEach((field) => {
@@ -214,15 +226,14 @@ async function saveHomepageContent(selectors = homepageFields.map((field) => fie
 }
 
 async function loadServices() {
-  services = fallbackServices.map((service) => ({ ...service }));
-  renderServices();
-
-  const { data, error } = await client
-    .from("services")
-    .select("id, service_key, title, description, button_text, sort_order, is_active")
-    .order("sort_order", { ascending: true });
-
-  if (error) throw error;
+  let data;
+  try {
+    data = await adminCmsRequest("services", "?select=id,service_key,title,description,button_text,sort_order,is_active&order=sort_order.asc");
+  } catch (error) {
+    services = fallbackServices.map((service) => ({ ...service }));
+    renderServices();
+    throw error;
+  }
   services = data?.length ? data : fallbackServices.map((service) => ({ ...service }));
   renderServices();
 }
@@ -287,15 +298,14 @@ async function saveServices() {
 
 async function loadWhyFeatures() {
   whyFeaturesLoadedFromSupabase = false;
-  whyFeatures = fallbackWhyFeatures.map((feature) => ({ ...feature }));
-  renderWhyFeatures();
-
-  const { data, error } = await client
-    .from("why_features")
-    .select("id, feature_key, title, description, icon_text, icon_url, sort_order, is_active")
-    .order("sort_order", { ascending: true });
-
-  if (error) throw error;
+  let data;
+  try {
+    data = await adminCmsRequest("why_features", "?select=id,feature_key,title,description,icon_text,icon_url,sort_order,is_active&order=sort_order.asc");
+  } catch (error) {
+    whyFeatures = fallbackWhyFeatures.map((feature) => ({ ...feature }));
+    renderWhyFeatures();
+    throw error;
+  }
   whyFeatures = data?.length ? data : fallbackWhyFeatures.map((feature) => ({ ...feature }));
   whyFeaturesLoadedFromSupabase = Boolean(data?.length);
   renderWhyFeatures();
@@ -367,15 +377,14 @@ async function saveWhyFeatures() {
 }
 
 async function loadAboutParagraphs() {
-  aboutParagraphs = fallbackAboutParagraphs.map((paragraph) => ({ ...paragraph }));
-  renderAboutParagraphs();
-
-  const { data, error } = await client
-    .from("about_paragraphs")
-    .select("id, paragraph_text, sort_order, is_active")
-    .order("sort_order", { ascending: true });
-
-  if (error) throw error;
+  let data;
+  try {
+    data = await adminCmsRequest("about_paragraphs", "?select=id,paragraph_text,sort_order,is_active&order=sort_order.asc");
+  } catch (error) {
+    aboutParagraphs = fallbackAboutParagraphs.map((paragraph) => ({ ...paragraph }));
+    renderAboutParagraphs();
+    throw error;
+  }
   aboutParagraphs = data?.length ? data : fallbackAboutParagraphs.map((paragraph) => ({ ...paragraph }));
   renderAboutParagraphs();
 }
@@ -448,15 +457,14 @@ async function deleteAboutParagraph(id) {
 }
 
 async function loadSocialLinks() {
-  socialLinks = [];
-  renderSocialLinks();
-
-  const { data, error } = await client
-    .from("social_links")
-    .select("id, platform, url, sort_order, is_active")
-    .order("sort_order", { ascending: true });
-
-  if (error) throw error;
+  let data;
+  try {
+    data = await adminCmsRequest("social_links", "?select=id,platform,url,sort_order,is_active&order=sort_order.asc");
+  } catch (error) {
+    socialLinks = [];
+    renderSocialLinks();
+    throw error;
+  }
   socialLinks = data || [];
   renderSocialLinks();
 }
@@ -535,15 +543,14 @@ async function deleteSocialLink(id) {
 }
 
 async function loadFaqs() {
-  faqs = fallbackFaqs.map((faq) => ({ ...faq }));
-  renderFaqs();
-
-  const { data, error } = await client
-    .from("faqs")
-    .select("id, question, answer, sort_order, is_active")
-    .order("sort_order", { ascending: true });
-
-  if (error) throw error;
+  let data;
+  try {
+    data = await adminCmsRequest("faqs", "?select=id,question,answer,sort_order,is_active&order=sort_order.asc");
+  } catch (error) {
+    faqs = fallbackFaqs.map((faq) => ({ ...faq }));
+    renderFaqs();
+    throw error;
+  }
   faqs = data?.length ? data : fallbackFaqs.map((faq) => ({ ...faq }));
   renderFaqs();
 }
@@ -624,7 +631,10 @@ async function deleteFaq(id) {
 
 async function loadAdminData() {
   if (adminLoadPromise) return adminLoadPromise;
-  if (contentLoaded && whyFeaturesLoadedFromSupabase) return Promise.resolve();
+  if (contentLoaded && whyFeaturesLoadedFromSupabase) {
+    setMessage(statusMessage, "Content loaded successfully", "success");
+    return Promise.resolve();
+  }
 
   adminLoadPromise = (async () => {
     isAdminLoading = true;
@@ -654,7 +664,7 @@ async function loadAdminData() {
     isAdminLoading = false;
     contentLoaded = !criticalFailed;
 
-    if (criticalFailed) {
+    if (criticalFailed || failed.length) {
       setMessage(statusMessage, "Some content could not be loaded. Please refresh or check Supabase.", "error");
       return;
     }
@@ -669,11 +679,11 @@ async function loadAdminData() {
   }
 }
 
-async function handleSave(action, successText) {
+async function handleSave(action) {
   setMessage(statusMessage, "Saving...");
   try {
     await action();
-    setMessage(statusMessage, successText, "success");
+    setMessage(statusMessage, "Saved successfully", "success");
   } catch (error) {
     console.error(error);
     setMessage(statusMessage, error.message || "Save failed.", "error");
@@ -823,7 +833,10 @@ loginForm.addEventListener("submit", async (event) => {
 });
 
 document.querySelector("[data-logout]").addEventListener("click", async () => {
-  await client.auth.signOut();
+  resetAdminState();
+  showAdmin(false);
+  const { error } = await client.auth.signOut();
+  if (error) setMessage(loginMessage, error.message || "Logout failed.", "error");
 });
 
 document.querySelector("[data-save-settings]").addEventListener("click", () => {
@@ -995,6 +1008,8 @@ client.auth.onAuthStateChange(async (_event, session) => {
       console.error(error);
       setMessage(statusMessage, error.message || "Could not load admin content.", "error");
     }
+  } else {
+    resetAdminState();
   }
 });
 
