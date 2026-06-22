@@ -622,15 +622,93 @@ const isAllowedProjectImage = (file) => {
   return allowedTypes.includes(file.type) || allowedExtensions.some((extension) => name.endsWith(extension));
 };
 
+const imageOptimizationDefaults = {
+  beforeAfter: { maxDimension: 1800, quality: 0.84 },
+  icon: { maxDimension: 512, quality: 0.84 }
+};
+
+const shouldOptimizeRasterImage = (file) => {
+  const rasterTypes = ["image/jpeg", "image/png", "image/webp"];
+  const rasterExtensions = [".jpg", ".jpeg", ".png", ".webp"];
+  const name = file?.name?.toLowerCase() || "";
+  return rasterTypes.includes(file?.type) || rasterExtensions.some((extension) => name.endsWith(extension));
+};
+
+const loadImageBitmap = async (file) => {
+  if (window.createImageBitmap) {
+    try {
+      return createImageBitmap(file, { imageOrientation: "from-image" });
+    } catch (error) {
+      console.warn("createImageBitmap failed; falling back to image element.", error);
+    }
+  }
+
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    image.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      resolve(image);
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("Image could not be loaded"));
+    };
+    image.src = objectUrl;
+  });
+};
+
+const canvasToWebpBlob = (canvas, quality) => new Promise((resolve, reject) => {
+  canvas.toBlob((blob) => {
+    if (blob) {
+      resolve(blob);
+      return;
+    }
+    reject(new Error("Image optimization failed"));
+  }, "image/webp", quality);
+});
+
+const webpFileName = (name, fallback = "image") => {
+  const baseName = name.replace(/\.[^.]+$/i, "") || fallback;
+  return `${baseName}.webp`;
+};
+
+async function optimizeImageForUpload(file, options = imageOptimizationDefaults.beforeAfter) {
+  if (!shouldOptimizeRasterImage(file)) return file;
+
+  const source = await loadImageBitmap(file);
+  const sourceWidth = source.width || source.naturalWidth;
+  const sourceHeight = source.height || source.naturalHeight;
+  const maxDimension = options.maxDimension || imageOptimizationDefaults.beforeAfter.maxDimension;
+  const scale = Math.min(1, maxDimension / Math.max(sourceWidth, sourceHeight));
+  const targetWidth = Math.max(1, Math.round(sourceWidth * scale));
+  const targetHeight = Math.max(1, Math.round(sourceHeight * scale));
+  const canvas = document.createElement("canvas");
+  canvas.width = targetWidth;
+  canvas.height = targetHeight;
+  const context = canvas.getContext("2d", { alpha: true });
+  if (!context) throw new Error("Image optimization failed");
+
+  context.drawImage(source, 0, 0, targetWidth, targetHeight);
+  if (typeof source.close === "function") source.close();
+
+  const blob = await canvasToWebpBlob(canvas, options.quality || 0.84);
+  return new File([blob], webpFileName(file.name), {
+    type: "image/webp",
+    lastModified: Date.now()
+  });
+}
+
 async function uploadBeforeAfterImage(file, type, projectKey) {
   if (!isAllowedProjectImage(file)) throw new Error("Error uploading image");
-  const fileName = safeFileName(file.name) || `${type}.jpg`;
+  const optimizedFile = await optimizeImageForUpload(file, imageOptimizationDefaults.beforeAfter);
+  const fileName = safeFileName(optimizedFile.name) || `${type}.webp`;
   const filePath = `before-after/${projectKey}-${type}-${fileName}`;
   const { error } = await client.storage
     .from("before-after")
-    .upload(filePath, file, {
+    .upload(filePath, optimizedFile, {
       cacheControl: "3600",
-      contentType: file.type || undefined,
+      contentType: optimizedFile.type || undefined,
       upsert: true
     });
 
@@ -973,14 +1051,15 @@ async function uploadIconForActiveFeature() {
   }
 
   setMessage(iconModalMessage, "Uploading icon...");
-  const fileName = safeFileName(selectedIconFile.name) || "icon";
+  const uploadFile = await optimizeImageForUpload(selectedIconFile, imageOptimizationDefaults.icon);
+  const fileName = safeFileName(uploadFile.name) || "icon.webp";
   const folder = safeFileName(feature.feature_key || feature.id) || feature.id;
   const filePath = `${folder}/${Date.now()}-${fileName}`;
   const { error: uploadError } = await client.storage
     .from("why-icons")
-    .upload(filePath, selectedIconFile, {
+    .upload(filePath, uploadFile, {
       cacheControl: "3600",
-      contentType: selectedIconFile.type || undefined,
+      contentType: uploadFile.type || undefined,
       upsert: true
     });
 
