@@ -368,13 +368,35 @@ if (calculator) {
     `).join("");
   };
 
+  const fallbackBeforeAfterProjects = [
+    {
+      before_image_url: "assets/before-sofa.png",
+      after_image_url: "assets/after-sofa.png",
+      title: "Sectional Sofa Restoration",
+      is_active: true
+    },
+    {
+      before_image_url: "assets/project-living-room.png",
+      after_image_url: "assets/hero-clean-living-room.png",
+      title: "Living Room Sofa & Carpet Refresh",
+      is_active: true
+    },
+    {
+      before_image_url: "assets/project-restaurant.png",
+      after_image_url: "assets/project-office.png",
+      title: "Commercial Upholstery & Carpet Refresh",
+      is_active: true
+    }
+  ];
+
   const applyBeforeAfterProjects = (projects) => {
     const activeProjects = projects.filter((project) => project.is_active && project.before_image_url && project.after_image_url);
-    if (!activeProjects.length) return;
+    if (!activeProjects.length) return false;
 
     document.querySelectorAll("[data-ba-carousel]").forEach((carousel) => {
       const slidesRoot = carousel.querySelector(".ba-slides");
       if (!slidesRoot) return;
+      slidesRoot.setAttribute("aria-busy", "false");
       slidesRoot.innerHTML = activeProjects.map((project, index) => `
         <article class="ba-slide ${index === 0 ? "is-active" : ""}" data-ba-slide>
           <div class="ba-slider-card">
@@ -395,9 +417,23 @@ if (calculator) {
       carousel.querySelectorAll("[data-ba-slider]").forEach(initializeBeforeAfterSlider);
       initializeBeforeAfterCarousel(carousel);
     });
+    return true;
+  };
+
+  const loadBeforeAfterContent = async () => {
+    try {
+      const beforeAfterRows = await cmsRequest("before_after_projects", "?select=id,before_image_url,after_image_url,title,sort_order,is_active,created_at&is_active=eq.true&order=sort_order.asc,created_at.asc");
+      if (!applyBeforeAfterProjects(beforeAfterRows)) {
+        applyBeforeAfterProjects(fallbackBeforeAfterProjects);
+      }
+    } catch (beforeAfterError) {
+      console.error("Before/After projects were not loaded; using hardcoded fallback.", beforeAfterError);
+      applyBeforeAfterProjects(fallbackBeforeAfterProjects);
+    }
   };
 
   const loadPublicCmsContent = async () => {
+    const beforeAfterContent = loadBeforeAfterContent();
     try {
       const [settings, homepageContent, serviceRows, whyRows, aboutRows, socialRows, faqRows] = await Promise.all([
         cmsRequest("site_settings", "?select=setting_key,setting_value"),
@@ -415,15 +451,11 @@ if (calculator) {
       applyAboutParagraphs(aboutRows);
       applySocialLinks(socialRows);
       applyFaqs(faqRows);
-      try {
-        const beforeAfterRows = await cmsRequest("before_after_projects", "?select=id,before_image_url,after_image_url,title,sort_order,is_active,created_at&is_active=eq.true&order=sort_order.asc,created_at.asc");
-        applyBeforeAfterProjects(beforeAfterRows);
-      } catch (beforeAfterError) {
-        console.error("Before/After projects were not loaded; using hardcoded fallback.", beforeAfterError);
-      }
-      updateEstimateLinks();
     } catch (error) {
       console.error("Public CMS content was not loaded; using hardcoded fallback.", error);
+    } finally {
+      await beforeAfterContent;
+      updateEstimateLinks();
     }
   };
 
