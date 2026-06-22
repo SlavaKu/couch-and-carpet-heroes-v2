@@ -277,6 +277,29 @@ textarea:focus {
   background: var(--white);
 }
 
+.ba-add-head {
+  margin-top: 22px;
+}
+
+.ba-project-summary {
+  align-items: center;
+}
+
+.ba-project-edit {
+  display: grid;
+  gap: 14px;
+}
+
+.ba-project-edit[hidden] {
+  display: none;
+}
+
+.ba-drag-handle {
+  color: var(--muted);
+  cursor: grab;
+  font-weight: 900;
+}
+
 .icon-current {
   width: 58px;
   height: 58px;

@@ -6,7 +6,7 @@
   <title>Couch and Carpet Heroes Admin</title>
   <link rel="stylesheet" href="admin.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="admin.js?v=20260622-before-after" defer></script>
+  <script src="admin.js?v=20260622-before-after-edit" defer></script>
 </head>
 <body>
   <main class="admin-shell">
@@ -244,7 +244,14 @@
             <h2>Before / After Projects</h2>
             <p>Manage before and after image pairs shown in the slider.</p>
           </div>
-          <button class="btn btn-primary" type="button" data-save-before-after>Save Project</button>
+        </div>
+        <div class="faq-list" data-before-after-list></div>
+
+        <div class="card-head ba-add-head">
+          <div>
+            <h2>Add New Project</h2>
+          </div>
+          <button class="btn btn-primary" type="button" data-save-before-after>Save New Project</button>
         </div>
         <div class="form-grid">
           <label>
@@ -265,7 +272,6 @@
           </label>
         </div>
         <p class="form-message" data-ba-message role="status" aria-live="polite"></p>
-        <div class="faq-list" data-before-after-list></div>
       </section>
 
       <section class="admin-card">

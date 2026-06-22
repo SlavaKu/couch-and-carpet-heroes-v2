@@ -558,14 +558,22 @@ async function loadBeforeAfterProjects() {
 function renderBeforeAfterProjects() {
   if (!lists.beforeAfter) return;
   lists.beforeAfter.innerHTML = beforeAfterProjects.map((project, index) => `
-    <article class="faq-editor" data-ba-project-id="${project.id}">
-      <div class="faq-row">
-        <strong>Project ${index + 1}</strong>
-        <label class="toggle-label">
-          <input type="checkbox" data-ba-project-field="is_active" ${project.is_active ? "checked" : ""}>
-          Active
-        </label>
+    <article class="faq-editor ba-project-card" data-ba-project-id="${project.id}" draggable="true">
+      <div class="faq-row ba-project-summary">
+        <span class="ba-drag-handle" aria-label="Drag to reorder">Drag</span>
+        <strong>${index + 1}</strong>
+        <div class="ba-admin-preview">
+          <img src="${escapeHtml(project.before_image_url || "")}" alt="">
+          <img src="${escapeHtml(project.after_image_url || "")}" alt="">
+        </div>
+        <span>${escapeHtml(project.title || "")}</span>
+        <span>${project.is_active ? "Active" : "Inactive"}</span>
+        <div class="card-actions">
+          <button class="btn btn-secondary" type="button" data-edit-before-after="${project.id}">Edit</button>
+          <button class="btn delete-btn" type="button" data-delete-before-after="${project.id}">Delete</button>
+        </div>
       </div>
+      <div class="ba-project-edit" data-ba-project-edit hidden>
       <div class="ba-admin-preview">
         <img src="${escapeHtml(project.before_image_url || "")}" alt="">
         <img src="${escapeHtml(project.after_image_url || "")}" alt="">
@@ -578,7 +586,20 @@ function renderBeforeAfterProjects() {
         Sort order
         <input type="number" data-ba-project-field="sort_order" value="${Number(project.sort_order || index + 1)}">
       </label>
-      <button class="btn delete-btn" type="button" data-delete-before-after="${project.id}">Delete Project</button>
+      <label class="toggle-label">
+        <input type="checkbox" data-ba-project-field="is_active" ${project.is_active ? "checked" : ""}>
+        Active
+      </label>
+      <label>
+        Replace Before image
+        <input type="file" data-ba-project-field="before_file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
+      </label>
+      <label>
+        Replace After image
+        <input type="file" data-ba-project-field="after_file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
+      </label>
+      <button class="btn btn-primary" type="button" data-save-before-after-project="${project.id}">Save Changes</button>
+      </div>
     </article>
   `).join("");
 }
@@ -674,6 +695,52 @@ async function saveBeforeAfterProjectEdits() {
     if (error) throw error;
   }
   await loadBeforeAfterProjects();
+}
+
+async function saveBeforeAfterProject(id) {
+  const card = document.querySelector(`[data-ba-project-id="${CSS.escape(id)}"]`);
+  const project = beforeAfterProjects.find((item) => item.id === id);
+  if (!card || !project) return;
+
+  const title = card.querySelector('[data-ba-project-field="title"]')?.value.trim() || "";
+  if (!title) throw new Error("Title is required");
+
+  const beforeFile = card.querySelector('[data-ba-project-field="before_file"]')?.files?.[0];
+  const afterFile = card.querySelector('[data-ba-project-field="after_file"]')?.files?.[0];
+  const payload = {
+    title,
+    sort_order: Number(card.querySelector('[data-ba-project-field="sort_order"]')?.value || project.sort_order || 0),
+    is_active: Boolean(card.querySelector('[data-ba-project-field="is_active"]')?.checked)
+  };
+
+  if (beforeFile) {
+    setMessage(beforeAfterMessage, "Uploading...");
+    payload.before_image_url = await uploadBeforeAfterImage(beforeFile, "before", id);
+  }
+  if (afterFile) {
+    setMessage(beforeAfterMessage, "Uploading...");
+    payload.after_image_url = await uploadBeforeAfterImage(afterFile, "after", id);
+  }
+
+  const { error } = await client.from("before_after_projects").update(payload).eq("id", id);
+  if (error) {
+    console.error("Before/After project save failed", error);
+    throw new Error("Error saving project");
+  }
+  await loadBeforeAfterProjects();
+}
+
+async function saveBeforeAfterOrder() {
+  for (const [index, project] of beforeAfterProjects.entries()) {
+    const nextOrder = index + 1;
+    project.sort_order = nextOrder;
+    const { error } = await client
+      .from("before_after_projects")
+      .update({ sort_order: nextOrder })
+      .eq("id", project.id);
+    if (error) throw error;
+  }
+  renderBeforeAfterProjects();
 }
 
 async function deleteBeforeAfterProject(id) {
@@ -1027,9 +1094,7 @@ document.querySelector("[data-save-footer]").addEventListener("click", () => {
 
 document.querySelector("[data-save-before-after]").addEventListener("click", () => {
   handleSave(async () => {
-    const hasNewProject = beforeAfterBeforeInput?.files?.[0] || beforeAfterAfterInput?.files?.[0] || beforeAfterTitleInput?.value.trim();
-    if (hasNewProject) await createBeforeAfterProject();
-    await saveBeforeAfterProjectEdits();
+    await createBeforeAfterProject();
   });
 });
 
@@ -1150,6 +1215,29 @@ lists.social.addEventListener("click", async (event) => {
 });
 
 lists.beforeAfter?.addEventListener("click", async (event) => {
+  const editButton = event.target.closest("[data-edit-before-after]");
+  if (editButton) {
+    const card = editButton.closest("[data-ba-project-id]");
+    const panel = card?.querySelector("[data-ba-project-edit]");
+    if (panel) panel.hidden = !panel.hidden;
+    return;
+  }
+
+  const saveButton = event.target.closest("[data-save-before-after-project]");
+  if (saveButton) {
+    setMessage(statusMessage, "Saving...");
+    try {
+      await saveBeforeAfterProject(saveButton.dataset.saveBeforeAfterProject);
+      setMessage(statusMessage, "Saved successfully", "success");
+      setMessage(beforeAfterMessage, "Saved successfully", "success");
+    } catch (error) {
+      console.error(error);
+      setMessage(statusMessage, error.message || "Error saving project", "error");
+      setMessage(beforeAfterMessage, error.message || "Error saving project", "error");
+    }
+    return;
+  }
+
   const button = event.target.closest("[data-delete-before-after]");
   if (!button) return;
   if (!window.confirm("Delete this before/after project?")) return;
@@ -1160,6 +1248,43 @@ lists.beforeAfter?.addEventListener("click", async (event) => {
   } catch (error) {
     console.error(error);
     setMessage(statusMessage, error.message || "Delete failed.", "error");
+  }
+});
+
+let draggedBeforeAfterId = "";
+
+lists.beforeAfter?.addEventListener("dragstart", (event) => {
+  const card = event.target.closest("[data-ba-project-id]");
+  if (!card) return;
+  draggedBeforeAfterId = card.dataset.baProjectId;
+  event.dataTransfer.effectAllowed = "move";
+});
+
+lists.beforeAfter?.addEventListener("dragover", (event) => {
+  if (!draggedBeforeAfterId) return;
+  event.preventDefault();
+});
+
+lists.beforeAfter?.addEventListener("drop", async (event) => {
+  event.preventDefault();
+  const targetCard = event.target.closest("[data-ba-project-id]");
+  if (!targetCard || !draggedBeforeAfterId || targetCard.dataset.baProjectId === draggedBeforeAfterId) return;
+
+  const fromIndex = beforeAfterProjects.findIndex((project) => project.id === draggedBeforeAfterId);
+  const toIndex = beforeAfterProjects.findIndex((project) => project.id === targetCard.dataset.baProjectId);
+  if (fromIndex < 0 || toIndex < 0) return;
+
+  const [movedProject] = beforeAfterProjects.splice(fromIndex, 1);
+  beforeAfterProjects.splice(toIndex, 0, movedProject);
+  draggedBeforeAfterId = "";
+  setMessage(statusMessage, "Saving...");
+  try {
+    await saveBeforeAfterOrder();
+    setMessage(statusMessage, "Saved successfully", "success");
+  } catch (error) {
+    console.error(error);
+    setMessage(statusMessage, error.message || "Error saving project", "error");
+    await loadBeforeAfterProjects();
   }
 });
 
