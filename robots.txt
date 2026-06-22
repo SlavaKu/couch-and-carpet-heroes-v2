@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+
+Sitemap: https://slavaku.github.io/couch-and-carpet-heroes-v2/sitemap.xml
