@@ -16,13 +16,19 @@ const iconChooseButton = document.querySelector("[data-icon-choose]");
 const iconInsertButton = document.querySelector("[data-icon-insert]");
 const iconPreview = document.querySelector("[data-icon-preview]");
 const iconModalMessage = document.querySelector("[data-icon-message]");
+const beforeAfterMessage = document.querySelector("[data-ba-message]");
+const beforeAfterBeforeInput = document.querySelector("[data-ba-before-file]");
+const beforeAfterAfterInput = document.querySelector("[data-ba-after-file]");
+const beforeAfterTitleInput = document.querySelector("[data-ba-title]");
+const beforeAfterActiveInput = document.querySelector("[data-ba-active]");
 
 const lists = {
   services: document.querySelector("[data-services-list]"),
   why: document.querySelector("[data-why-list]"),
   about: document.querySelector("[data-about-list]"),
   social: document.querySelector("[data-social-list]"),
-  faqs: document.querySelector("[data-faq-list]")
+  faqs: document.querySelector("[data-faq-list]"),
+  beforeAfter: document.querySelector("[data-before-after-list]")
 };
 
 const settingKeys = [
@@ -111,6 +117,7 @@ let whyFeatures = [];
 let aboutParagraphs = [];
 let socialLinks = [];
 let faqs = [];
+let beforeAfterProjects = [];
 let activeIconFeatureId = "";
 let selectedIconFile = null;
 let selectedIconPreviewUrl = "";
@@ -543,6 +550,139 @@ async function deleteSocialLink(id) {
   renderSocialLinks();
 }
 
+async function loadBeforeAfterProjects() {
+  beforeAfterProjects = await adminCmsRequest("before_after_projects", "?select=id,before_image_url,after_image_url,title,sort_order,is_active,created_at&order=sort_order.asc,created_at.asc");
+  renderBeforeAfterProjects();
+}
+
+function renderBeforeAfterProjects() {
+  if (!lists.beforeAfter) return;
+  lists.beforeAfter.innerHTML = beforeAfterProjects.map((project, index) => `
+    <article class="faq-editor" data-ba-project-id="${project.id}">
+      <div class="faq-row">
+        <strong>Project ${index + 1}</strong>
+        <label class="toggle-label">
+          <input type="checkbox" data-ba-project-field="is_active" ${project.is_active ? "checked" : ""}>
+          Active
+        </label>
+      </div>
+      <div class="ba-admin-preview">
+        <img src="${escapeHtml(project.before_image_url || "")}" alt="">
+        <img src="${escapeHtml(project.after_image_url || "")}" alt="">
+      </div>
+      <label>
+        Title
+        <input type="text" data-ba-project-field="title" value="${escapeHtml(project.title || "")}">
+      </label>
+      <label>
+        Sort order
+        <input type="number" data-ba-project-field="sort_order" value="${Number(project.sort_order || index + 1)}">
+      </label>
+      <button class="btn delete-btn" type="button" data-delete-before-after="${project.id}">Delete Project</button>
+    </article>
+  `).join("");
+}
+
+function syncBeforeAfterProjects() {
+  document.querySelectorAll("[data-ba-project-id]").forEach((card) => {
+    const item = beforeAfterProjects.find((project) => project.id === card.dataset.baProjectId);
+    if (!item) return;
+    item.title = card.querySelector('[data-ba-project-field="title"]')?.value.trim() || "";
+    item.sort_order = Number(card.querySelector('[data-ba-project-field="sort_order"]')?.value || 0);
+    item.is_active = Boolean(card.querySelector('[data-ba-project-field="is_active"]')?.checked);
+  });
+}
+
+const isAllowedProjectImage = (file) => {
+  if (!file) return false;
+  const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+  const allowedExtensions = [".jpg", ".jpeg", ".png", ".webp"];
+  const name = file.name.toLowerCase();
+  return allowedTypes.includes(file.type) || allowedExtensions.some((extension) => name.endsWith(extension));
+};
+
+async function uploadBeforeAfterImage(file, type, projectKey) {
+  if (!isAllowedProjectImage(file)) throw new Error("Error uploading image");
+  const fileName = safeFileName(file.name) || `${type}.jpg`;
+  const filePath = `before-after/${projectKey}-${type}-${fileName}`;
+  const { error } = await client.storage
+    .from("before-after")
+    .upload(filePath, file, {
+      cacheControl: "3600",
+      contentType: file.type || undefined,
+      upsert: true
+    });
+
+  if (error) {
+    console.error("Before/After image upload failed", error);
+    throw new Error("Error uploading image");
+  }
+
+  const { data } = client.storage.from("before-after").getPublicUrl(filePath);
+  return data?.publicUrl || "";
+}
+
+async function createBeforeAfterProject() {
+  const beforeFile = beforeAfterBeforeInput?.files?.[0];
+  const afterFile = beforeAfterAfterInput?.files?.[0];
+  const title = beforeAfterTitleInput?.value.trim() || "";
+  if (!beforeFile) throw new Error("Before image is required");
+  if (!afterFile) throw new Error("After image is required");
+  if (!title) throw new Error("Title is required");
+
+  setMessage(beforeAfterMessage, "Uploading...");
+  const projectKey = Date.now();
+  const [beforeUrl, afterUrl] = await Promise.all([
+    uploadBeforeAfterImage(beforeFile, "before", projectKey),
+    uploadBeforeAfterImage(afterFile, "after", projectKey)
+  ]);
+
+  if (!beforeUrl || !afterUrl) throw new Error("Error uploading image");
+
+  const nextOrder = beforeAfterProjects.length
+    ? Math.max(...beforeAfterProjects.map((project) => Number(project.sort_order) || 0)) + 1
+    : 1;
+  const { error } = await client.from("before_after_projects").insert({
+    before_image_url: beforeUrl,
+    after_image_url: afterUrl,
+    title,
+    sort_order: nextOrder,
+    is_active: Boolean(beforeAfterActiveInput?.checked)
+  });
+
+  if (error) {
+    console.error("Before/After project save failed", error);
+    throw new Error("Error saving project");
+  }
+
+  if (beforeAfterBeforeInput) beforeAfterBeforeInput.value = "";
+  if (beforeAfterAfterInput) beforeAfterAfterInput.value = "";
+  if (beforeAfterTitleInput) beforeAfterTitleInput.value = "";
+  if (beforeAfterActiveInput) beforeAfterActiveInput.checked = true;
+  await loadBeforeAfterProjects();
+  setMessage(beforeAfterMessage, "Saved successfully", "success");
+}
+
+async function saveBeforeAfterProjectEdits() {
+  syncBeforeAfterProjects();
+  for (const project of beforeAfterProjects) {
+    const { error } = await client.from("before_after_projects").update({
+      title: project.title,
+      sort_order: Number(project.sort_order || 0),
+      is_active: Boolean(project.is_active)
+    }).eq("id", project.id);
+    if (error) throw error;
+  }
+  await loadBeforeAfterProjects();
+}
+
+async function deleteBeforeAfterProject(id) {
+  const { error } = await client.from("before_after_projects").delete().eq("id", id);
+  if (error) throw error;
+  beforeAfterProjects = beforeAfterProjects.filter((project) => project.id !== id);
+  renderBeforeAfterProjects();
+}
+
 async function loadFaqs() {
   let data;
   try {
@@ -650,6 +790,7 @@ async function loadAdminData() {
       ["Why Choose Us", loadWhyFeatures, true],
       ["About", loadAboutParagraphs, false],
       ["Footer Social Links", loadSocialLinks, false],
+      ["Before / After Projects", loadBeforeAfterProjects, false],
       ["FAQs", loadFaqs, false]
     ];
     const results = await Promise.allSettled(loaders.map(([, loader]) => loader()));
@@ -884,6 +1025,14 @@ document.querySelector("[data-save-footer]").addEventListener("click", () => {
   }, "Footer saved.");
 });
 
+document.querySelector("[data-save-before-after]").addEventListener("click", () => {
+  handleSave(async () => {
+    const hasNewProject = beforeAfterBeforeInput?.files?.[0] || beforeAfterAfterInput?.files?.[0] || beforeAfterTitleInput?.value.trim();
+    if (hasNewProject) await createBeforeAfterProject();
+    await saveBeforeAfterProjectEdits();
+  });
+});
+
 document.querySelector("[data-save-faqs]").addEventListener("click", () => {
   handleSave(saveFaqs, "FAQs saved.");
 });
@@ -994,6 +1143,20 @@ lists.social.addEventListener("click", async (event) => {
   try {
     await deleteSocialLink(button.dataset.deleteSocial);
     setMessage(statusMessage, "Social link deleted.", "success");
+  } catch (error) {
+    console.error(error);
+    setMessage(statusMessage, error.message || "Delete failed.", "error");
+  }
+});
+
+lists.beforeAfter?.addEventListener("click", async (event) => {
+  const button = event.target.closest("[data-delete-before-after]");
+  if (!button) return;
+  if (!window.confirm("Delete this before/after project?")) return;
+  setMessage(statusMessage, "Deleting project...");
+  try {
+    await deleteBeforeAfterProject(button.dataset.deleteBeforeAfter);
+    setMessage(statusMessage, "Saved successfully", "success");
   } catch (error) {
     console.error(error);
     setMessage(statusMessage, error.message || "Delete failed.", "error");

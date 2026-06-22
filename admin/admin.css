@@ -262,6 +262,21 @@ textarea:focus {
   border: 1px solid #fecaca;
 }
 
+.ba-admin-preview {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 120px));
+  gap: 12px;
+}
+
+.ba-admin-preview img {
+  width: 100%;
+  aspect-ratio: 1.2 / .8;
+  object-fit: cover;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--white);
+}
+
 .icon-current {
   width: 58px;
   height: 58px;

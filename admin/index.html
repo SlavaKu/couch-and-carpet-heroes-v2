@@ -6,7 +6,7 @@
   <title>Couch and Carpet Heroes Admin</title>
   <link rel="stylesheet" href="admin.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="admin.js?v=20260616-sync" defer></script>
+  <script src="admin.js?v=20260622-before-after" defer></script>
 </head>
 <body>
   <main class="admin-shell">
@@ -236,6 +236,36 @@
           </label>
         </div>
         <div class="faq-list" data-social-list></div>
+      </section>
+
+      <section class="admin-card">
+        <div class="card-head">
+          <div>
+            <h2>Before / After Projects</h2>
+            <p>Manage before and after image pairs shown in the slider.</p>
+          </div>
+          <button class="btn btn-primary" type="button" data-save-before-after>Save Project</button>
+        </div>
+        <div class="form-grid">
+          <label>
+            Before image
+            <input type="file" data-ba-before-file accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
+          </label>
+          <label>
+            After image
+            <input type="file" data-ba-after-file accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
+          </label>
+          <label>
+            Title
+            <input type="text" data-ba-title placeholder="Sectional Sofa Restoration">
+          </label>
+          <label class="toggle-label">
+            <input type="checkbox" data-ba-active checked>
+            Active
+          </label>
+        </div>
+        <p class="form-message" data-ba-message role="status" aria-live="polite"></p>
+        <div class="faq-list" data-before-after-list></div>
       </section>
 
       <section class="admin-card">

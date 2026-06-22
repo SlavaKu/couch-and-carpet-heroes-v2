@@ -15,10 +15,9 @@ mainNav?.querySelectorAll("a").forEach((link) => {
   });
 });
 
-const sliders = document.querySelectorAll("[data-ba-slider]");
-
-sliders.forEach((slider) => {
+const initializeBeforeAfterSlider = (slider) => {
   const range = slider.querySelector(".ba-range");
+  if (!range) return;
   const update = () => {
     const value = Number(range.value);
     slider.style.setProperty("--position", `${value}%`);
@@ -26,15 +25,15 @@ sliders.forEach((slider) => {
   };
   range.addEventListener("input", update);
   update();
-});
+};
 
-const beforeAfterCarousels = document.querySelectorAll("[data-ba-carousel]");
-
-beforeAfterCarousels.forEach((carousel) => {
+const initializeBeforeAfterCarousel = (carousel) => {
   const slides = Array.from(carousel.querySelectorAll("[data-ba-slide]"));
   const prev = carousel.querySelector("[data-ba-prev]");
   const next = carousel.querySelector("[data-ba-next]");
   const dotsRoot = carousel.querySelector("[data-ba-dots]");
+  if (!slides.length || !dotsRoot) return;
+  dotsRoot.innerHTML = "";
   let activeIndex = slides.findIndex((slide) => slide.classList.contains("is-active"));
   if (activeIndex < 0) activeIndex = 0;
 
@@ -61,10 +60,13 @@ beforeAfterCarousels.forEach((carousel) => {
     });
   }
 
-  prev?.addEventListener("click", () => showSlide(activeIndex - 1));
-  next?.addEventListener("click", () => showSlide(activeIndex + 1));
+  if (prev) prev.onclick = () => showSlide(activeIndex - 1);
+  if (next) next.onclick = () => showSlide(activeIndex + 1);
   showSlide(activeIndex);
-});
+};
+
+document.querySelectorAll("[data-ba-slider]").forEach(initializeBeforeAfterSlider);
+document.querySelectorAll("[data-ba-carousel]").forEach(initializeBeforeAfterCarousel);
 
 const calculator = document.querySelector("[data-calculator]");
 
@@ -366,6 +368,35 @@ if (calculator) {
     `).join("");
   };
 
+  const applyBeforeAfterProjects = (projects) => {
+    const activeProjects = projects.filter((project) => project.is_active && project.before_image_url && project.after_image_url);
+    if (!activeProjects.length) return;
+
+    document.querySelectorAll("[data-ba-carousel]").forEach((carousel) => {
+      const slidesRoot = carousel.querySelector(".ba-slides");
+      if (!slidesRoot) return;
+      slidesRoot.innerHTML = activeProjects.map((project, index) => `
+        <article class="ba-slide ${index === 0 ? "is-active" : ""}" data-ba-slide>
+          <div class="ba-slider-card">
+            <div class="ba-slider" data-ba-slider style="--position: 50%; --position-num: .5;">
+              <img class="ba-slider-img" src="${escapeCmsText(project.before_image_url)}" alt="${escapeCmsText(project.title || "Before cleaning")} before cleaning">
+              <div class="ba-slider-after">
+                <img class="ba-slider-img" src="${escapeCmsText(project.after_image_url)}" alt="${escapeCmsText(project.title || "After cleaning")} after cleaning">
+              </div>
+              <span class="ba-label ba-label-before">Before</span>
+              <span class="ba-label ba-label-after">After</span>
+              <div class="ba-divider" aria-hidden="true"></div>
+              <input class="ba-range" type="range" min="1" max="99" value="50" aria-label="Compare ${escapeCmsText(project.title || "cleaning result")} before and after">
+            </div>
+            <div class="ba-title">${escapeCmsText(project.title || "Before & After Result")}</div>
+          </div>
+        </article>
+      `).join("");
+      carousel.querySelectorAll("[data-ba-slider]").forEach(initializeBeforeAfterSlider);
+      initializeBeforeAfterCarousel(carousel);
+    });
+  };
+
   const loadPublicCmsContent = async () => {
     try {
       const [settings, homepageContent, serviceRows, whyRows, aboutRows, socialRows, faqRows] = await Promise.all([
@@ -384,6 +415,12 @@ if (calculator) {
       applyAboutParagraphs(aboutRows);
       applySocialLinks(socialRows);
       applyFaqs(faqRows);
+      try {
+        const beforeAfterRows = await cmsRequest("before_after_projects", "?select=id,before_image_url,after_image_url,title,sort_order,is_active,created_at&is_active=eq.true&order=sort_order.asc,created_at.asc");
+        applyBeforeAfterProjects(beforeAfterRows);
+      } catch (beforeAfterError) {
+        console.error("Before/After projects were not loaded; using hardcoded fallback.", beforeAfterError);
+      }
       updateEstimateLinks();
     } catch (error) {
       console.error("Public CMS content was not loaded; using hardcoded fallback.", error);
