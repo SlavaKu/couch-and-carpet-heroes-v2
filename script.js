@@ -379,9 +379,9 @@ if (calculator) {
         <article class="ba-slide ${index === 0 ? "is-active" : ""}" data-ba-slide>
           <div class="ba-slider-card">
             <div class="ba-slider" data-ba-slider style="--position: 50%; --position-num: .5;">
-              <img class="ba-slider-img" src="${escapeCmsText(project.before_image_url)}" alt="${escapeCmsText(project.title || "Before cleaning")} before cleaning">
+              <img class="ba-slider-img" src="${escapeCmsText(project.after_image_url)}" alt="${escapeCmsText(project.title || "After cleaning")} after cleaning">
               <div class="ba-slider-after">
-                <img class="ba-slider-img" src="${escapeCmsText(project.after_image_url)}" alt="${escapeCmsText(project.title || "After cleaning")} after cleaning">
+                <img class="ba-slider-img" src="${escapeCmsText(project.before_image_url)}" alt="${escapeCmsText(project.title || "Before cleaning")} before cleaning">
               </div>
               <span class="ba-label ba-label-before">Before</span>
               <span class="ba-label ba-label-after">After</span>
