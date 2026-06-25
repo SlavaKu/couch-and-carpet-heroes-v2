@@ -333,7 +333,7 @@ if (calculator) {
     if (!whyGrid || activeFeatures.length === 0) return;
     whyGrid.innerHTML = activeFeatures.map((feature) => `
       <article class="why-card">
-        <div class="service-icon">${feature.icon_url ? `<img src="${escapeCmsText(feature.icon_url)}" alt="" loading="lazy">` : escapeCmsText(feature.icon_text)}</div>
+        <div class="service-icon">${feature.icon_url ? `<img src="${escapeCmsText(feature.icon_url)}" alt="" loading="lazy" decoding="async">` : escapeCmsText(feature.icon_text)}</div>
         <h3>${escapeCmsText(feature.title)}</h3>
         <p>${escapeCmsText(feature.description)}</p>
       </article>
@@ -401,9 +401,9 @@ if (calculator) {
         <article class="ba-slide ${index === 0 ? "is-active" : ""}" data-ba-slide>
           <div class="ba-slider-card">
             <div class="ba-slider" data-ba-slider style="--position: 50%; --position-num: .5;">
-              <img class="ba-slider-img" src="${escapeCmsText(project.after_image_url)}" alt="${escapeCmsText(project.title || "After cleaning")} after cleaning">
+              <img class="ba-slider-img" src="${escapeCmsText(project.after_image_url)}" alt="${escapeCmsText(project.title || "After cleaning")} after cleaning" loading="${index === 0 ? "eager" : "lazy"}" decoding="async"${index === 0 ? ' fetchpriority="high"' : ""}>
               <div class="ba-slider-after">
-                <img class="ba-slider-img" src="${escapeCmsText(project.before_image_url)}" alt="${escapeCmsText(project.title || "Before cleaning")} before cleaning">
+                <img class="ba-slider-img" src="${escapeCmsText(project.before_image_url)}" alt="${escapeCmsText(project.title || "Before cleaning")} before cleaning" loading="${index === 0 ? "eager" : "lazy"}" decoding="async">
               </div>
               <span class="ba-label ba-label-before">Before</span>
               <span class="ba-label ba-label-after">After</span>
