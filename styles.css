@@ -1086,7 +1086,14 @@ details p { color: var(--muted); margin-bottom: 0; }
   gap: 36px;
   align-items: start;
 }
-.footer-logo { width: 220px; margin-bottom: 18px; filter: brightness(0) invert(1); }
+.footer-logo {
+  width: 220px;
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+  margin-bottom: 18px;
+  filter: brightness(0) invert(1);
+}
 .footer p, .footer a { color: #cbd5e1; }
 .footer h3 { color: white; font-size: 18px; margin-bottom: 16px; }
 .footer-links { display: grid; gap: 10px; }

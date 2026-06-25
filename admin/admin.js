@@ -22,6 +22,28 @@ const beforeAfterAfterInput = document.querySelector("[data-ba-after-file]");
 const beforeAfterTitleInput = document.querySelector("[data-ba-title]");
 const beforeAfterActiveInput = document.querySelector("[data-ba-active]");
 
+const adminSectionOrder = [
+  "Business Settings",
+  "Homepage Content",
+  "Before / After Projects",
+  "Services Section",
+  "Contact Section",
+  "About Section",
+  "Why Choose Us",
+  "FAQs",
+  "Footer"
+];
+
+const adminCards = Array.from(adminPanel.querySelectorAll(":scope > .admin-card"));
+const adminCardsByTitle = new Map(adminCards.map((card) => [
+  card.querySelector(".card-head h2")?.textContent.trim(),
+  card
+]));
+adminSectionOrder.forEach((title) => {
+  const card = adminCardsByTitle.get(title);
+  if (card) adminPanel.appendChild(card);
+});
+
 const lists = {
   services: document.querySelector("[data-services-list]"),
   why: document.querySelector("[data-why-list]"),
