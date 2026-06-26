@@ -21,6 +21,15 @@ const beforeAfterBeforeInput = document.querySelector("[data-ba-before-file]");
 const beforeAfterAfterInput = document.querySelector("[data-ba-after-file]");
 const beforeAfterTitleInput = document.querySelector("[data-ba-title]");
 const beforeAfterActiveInput = document.querySelector("[data-ba-active]");
+const beforeAfterFramingDefaults = {
+  shared_zoom: 1,
+  before_zoom: 1,
+  after_zoom: 1,
+  before_position_x: 50,
+  before_position_y: 50,
+  after_position_x: 50,
+  after_position_y: 50
+};
 
 const adminSectionOrder = [
   "Business Settings",
@@ -573,13 +582,48 @@ async function deleteSocialLink(id) {
 }
 
 async function loadBeforeAfterProjects() {
-  beforeAfterProjects = await adminCmsRequest("before_after_projects", "?select=id,before_image_url,after_image_url,title,sort_order,is_active,created_at&order=sort_order.asc,created_at.asc");
+  beforeAfterProjects = await adminCmsRequest("before_after_projects", "?select=id,before_image_url,after_image_url,title,sort_order,is_active,created_at,shared_zoom,before_zoom,after_zoom,before_position_x,before_position_y,after_position_x,after_position_y&order=sort_order.asc,created_at.asc");
   renderBeforeAfterProjects();
 }
 
+const framingNumber = (value, fallback, min, max) => {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return fallback;
+  return Math.min(max, Math.max(min, number));
+};
+
+const framingPercent = (value) => framingNumber(value, 50, 0, 100);
+const framingZoom = (value) => framingNumber(value, 1, 1, 3);
+const projectFraming = (project = {}) => ({
+  shared_zoom: framingZoom(project.shared_zoom ?? beforeAfterFramingDefaults.shared_zoom),
+  before_zoom: framingZoom(project.before_zoom ?? beforeAfterFramingDefaults.before_zoom),
+  after_zoom: framingZoom(project.after_zoom ?? beforeAfterFramingDefaults.after_zoom),
+  before_position_x: framingPercent(project.before_position_x ?? beforeAfterFramingDefaults.before_position_x),
+  before_position_y: framingPercent(project.before_position_y ?? beforeAfterFramingDefaults.before_position_y),
+  after_position_x: framingPercent(project.after_position_x ?? beforeAfterFramingDefaults.after_position_x),
+  after_position_y: framingPercent(project.after_position_y ?? beforeAfterFramingDefaults.after_position_y)
+});
+
+const imageFramingStyle = (framing, phase) => {
+  const sharedZoom = framingZoom(framing.shared_zoom);
+  const zoom = framingZoom(framing[`${phase}_zoom`]) * sharedZoom;
+  const x = framingPercent(framing[`${phase}_position_x`]);
+  const y = framingPercent(framing[`${phase}_position_y`]);
+  return `object-position: ${x}% ${y}%; transform: scale(${zoom}); transform-origin: ${x}% ${y}%;`;
+};
+
+const framingRange = (field, label, value, min = 0, max = 100, step = 1) => `
+  <label>
+    ${label}
+    <input type="range" data-ba-project-field="${field}" min="${min}" max="${max}" step="${step}" value="${value}">
+  </label>
+`;
+
 function renderBeforeAfterProjects() {
   if (!lists.beforeAfter) return;
-  lists.beforeAfter.innerHTML = beforeAfterProjects.map((project, index) => `
+  lists.beforeAfter.innerHTML = beforeAfterProjects.map((project, index) => {
+    const framing = projectFraming(project);
+    return `
     <article class="faq-editor ba-project-card" data-ba-project-id="${project.id}" draggable="true">
       <div class="faq-row ba-project-summary">
         <span class="ba-drag-handle" aria-label="Drag to reorder">Drag</span>
@@ -597,8 +641,8 @@ function renderBeforeAfterProjects() {
       </div>
       <div class="ba-project-edit" data-ba-project-edit hidden>
       <div class="ba-admin-preview">
-        <img src="${escapeHtml(project.before_image_url || "")}" alt="">
-        <img src="${escapeHtml(project.after_image_url || "")}" alt="">
+        <img src="${escapeHtml(project.before_image_url || "")}" alt="" data-ba-framing-preview="before" style="${imageFramingStyle(framing, "before")}">
+        <img src="${escapeHtml(project.after_image_url || "")}" alt="" data-ba-framing-preview="after" style="${imageFramingStyle(framing, "after")}">
       </div>
       <label>
         Title
@@ -620,10 +664,29 @@ function renderBeforeAfterProjects() {
         Replace After image
         <input type="file" data-ba-project-field="after_file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
       </label>
+      <div class="ba-framing-controls" aria-label="Before and after image framing controls">
+        <h3>Framing</h3>
+        ${framingRange("shared_zoom", "Overall zoom", framing.shared_zoom, 1, 3, 0.05)}
+        <div class="ba-framing-grid">
+          <fieldset>
+            <legend>Before image</legend>
+            ${framingRange("before_zoom", "Before zoom", framing.before_zoom, 1, 3, 0.05)}
+            ${framingRange("before_position_x", "Horizontal position", framing.before_position_x)}
+            ${framingRange("before_position_y", "Vertical position", framing.before_position_y)}
+          </fieldset>
+          <fieldset>
+            <legend>After image</legend>
+            ${framingRange("after_zoom", "After zoom", framing.after_zoom, 1, 3, 0.05)}
+            ${framingRange("after_position_x", "Horizontal position", framing.after_position_x)}
+            ${framingRange("after_position_y", "Vertical position", framing.after_position_y)}
+          </fieldset>
+        </div>
+      </div>
       <button class="btn btn-primary" type="button" data-save-before-after-project="${project.id}">Save Changes</button>
       </div>
     </article>
-  `).join("");
+  `;
+  }).join("");
 }
 
 function syncBeforeAfterProjects() {
@@ -633,8 +696,30 @@ function syncBeforeAfterProjects() {
     item.title = card.querySelector('[data-ba-project-field="title"]')?.value.trim() || "";
     item.sort_order = Number(card.querySelector('[data-ba-project-field="sort_order"]')?.value || 0);
     item.is_active = Boolean(card.querySelector('[data-ba-project-field="is_active"]')?.checked);
+    Object.keys(beforeAfterFramingDefaults).forEach((field) => {
+      const input = card.querySelector(`[data-ba-project-field="${field}"]`);
+      if (input) item[field] = field.includes("zoom")
+        ? framingZoom(input.value)
+        : framingPercent(input.value);
+    });
   });
 }
+
+const readFramingFromCard = (card) => Object.fromEntries(
+  Object.keys(beforeAfterFramingDefaults).map((field) => {
+    const input = card?.querySelector(`[data-ba-project-field="${field}"]`);
+    const value = input?.value ?? beforeAfterFramingDefaults[field];
+    return [field, field.includes("zoom") ? framingZoom(value) : framingPercent(value)];
+  })
+);
+
+const updateBeforeAfterFramingPreview = (card) => {
+  if (!card) return;
+  const framing = readFramingFromCard(card);
+  card.querySelectorAll("[data-ba-framing-preview]").forEach((image) => {
+    image.setAttribute("style", imageFramingStyle(framing, image.dataset.baFramingPreview));
+  });
+};
 
 const isAllowedProjectImage = (file) => {
   if (!file) return false;
@@ -768,7 +853,8 @@ async function createBeforeAfterProject() {
     after_image_url: afterUrl,
     title,
     sort_order: nextOrder,
-    is_active: Boolean(beforeAfterActiveInput?.checked)
+    is_active: Boolean(beforeAfterActiveInput?.checked),
+    ...beforeAfterFramingDefaults
   });
 
   if (error) {
@@ -790,7 +876,8 @@ async function saveBeforeAfterProjectEdits() {
     const { error } = await client.from("before_after_projects").update({
       title: project.title,
       sort_order: Number(project.sort_order || 0),
-      is_active: Boolean(project.is_active)
+      is_active: Boolean(project.is_active),
+      ...projectFraming(project)
     }).eq("id", project.id);
     if (error) throw error;
   }
@@ -810,7 +897,14 @@ async function saveBeforeAfterProject(id) {
   const payload = {
     title,
     sort_order: Number(card.querySelector('[data-ba-project-field="sort_order"]')?.value || project.sort_order || 0),
-    is_active: Boolean(card.querySelector('[data-ba-project-field="is_active"]')?.checked)
+    is_active: Boolean(card.querySelector('[data-ba-project-field="is_active"]')?.checked),
+    shared_zoom: framingZoom(card.querySelector('[data-ba-project-field="shared_zoom"]')?.value),
+    before_zoom: framingZoom(card.querySelector('[data-ba-project-field="before_zoom"]')?.value),
+    after_zoom: framingZoom(card.querySelector('[data-ba-project-field="after_zoom"]')?.value),
+    before_position_x: framingPercent(card.querySelector('[data-ba-project-field="before_position_x"]')?.value),
+    before_position_y: framingPercent(card.querySelector('[data-ba-project-field="before_position_y"]')?.value),
+    after_position_x: framingPercent(card.querySelector('[data-ba-project-field="after_position_x"]')?.value),
+    after_position_y: framingPercent(card.querySelector('[data-ba-project-field="after_position_y"]')?.value)
   };
 
   if (beforeFile) {
@@ -1350,6 +1444,12 @@ lists.beforeAfter?.addEventListener("click", async (event) => {
     console.error(error);
     setMessage(statusMessage, error.message || "Delete failed.", "error");
   }
+});
+
+lists.beforeAfter?.addEventListener("input", (event) => {
+  const input = event.target.closest("[data-ba-project-field]");
+  if (!input || !Object.hasOwn(beforeAfterFramingDefaults, input.dataset.baProjectField)) return;
+  updateBeforeAfterFramingPreview(input.closest("[data-ba-project-id]"));
 });
 
 let draggedBeforeAfterId = "";

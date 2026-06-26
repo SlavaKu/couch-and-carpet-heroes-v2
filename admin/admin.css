@@ -294,6 +294,50 @@ textarea:focus {
   display: none;
 }
 
+.ba-framing-controls {
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #f8fafc;
+}
+
+.ba-framing-controls h3 {
+  margin: 0;
+  color: var(--black);
+  font-size: 16px;
+}
+
+.ba-framing-controls input[type="range"] {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+  accent-color: var(--orange);
+}
+
+.ba-framing-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.ba-framing-grid fieldset {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+
+.ba-framing-grid legend {
+  padding: 0 6px;
+  color: var(--black);
+  font-weight: 900;
+}
+
 .ba-drag-handle {
   color: var(--muted);
   cursor: grab;
@@ -415,6 +459,10 @@ textarea:focus {
   }
 
   .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ba-framing-grid {
     grid-template-columns: 1fr;
   }
 

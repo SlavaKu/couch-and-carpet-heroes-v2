@@ -373,21 +373,59 @@ if (calculator) {
       before_image_url: "assets/before-sofa.png",
       after_image_url: "assets/after-sofa.png",
       title: "Sectional Sofa Restoration",
-      is_active: true
+      is_active: true,
+      shared_zoom: 1,
+      before_zoom: 1,
+      after_zoom: 1,
+      before_position_x: 50,
+      before_position_y: 50,
+      after_position_x: 50,
+      after_position_y: 50
     },
     {
       before_image_url: "assets/project-living-room.png",
       after_image_url: "assets/hero-clean-living-room.png",
       title: "Living Room Sofa & Carpet Refresh",
-      is_active: true
+      is_active: true,
+      shared_zoom: 1,
+      before_zoom: 1,
+      after_zoom: 1,
+      before_position_x: 50,
+      before_position_y: 50,
+      after_position_x: 50,
+      after_position_y: 50
     },
     {
       before_image_url: "assets/project-restaurant.png",
       after_image_url: "assets/project-office.png",
       title: "Commercial Upholstery & Carpet Refresh",
-      is_active: true
+      is_active: true,
+      shared_zoom: 1,
+      before_zoom: 1,
+      after_zoom: 1,
+      before_position_x: 50,
+      before_position_y: 50,
+      after_position_x: 50,
+      after_position_y: 50
     }
   ];
+
+  const framingNumber = (value, fallback, min, max) => {
+    const number = Number(value);
+    if (!Number.isFinite(number)) return fallback;
+    return Math.min(max, Math.max(min, number));
+  };
+
+  const framingPercent = (value) => framingNumber(value, 50, 0, 100);
+  const framingZoom = (value) => framingNumber(value, 1, 1, 3);
+
+  const imageFramingStyle = (project, phase) => {
+    const sharedZoom = framingZoom(project.shared_zoom);
+    const zoom = framingZoom(project[`${phase}_zoom`]) * sharedZoom;
+    const x = framingPercent(project[`${phase}_position_x`]);
+    const y = framingPercent(project[`${phase}_position_y`]);
+    return `object-position: ${x}% ${y}%; transform: scale(${zoom}); transform-origin: ${x}% ${y}%;`;
+  };
 
   const applyBeforeAfterProjects = (projects) => {
     const activeProjects = projects.filter((project) => project.is_active && project.before_image_url && project.after_image_url);
@@ -401,9 +439,9 @@ if (calculator) {
         <article class="ba-slide ${index === 0 ? "is-active" : ""}" data-ba-slide>
           <div class="ba-slider-card">
             <div class="ba-slider" data-ba-slider style="--position: 50%; --position-num: .5;">
-              <img class="ba-slider-img" src="${escapeCmsText(project.after_image_url)}" alt="${escapeCmsText(project.title || "After cleaning")} after cleaning" loading="${index === 0 ? "eager" : "lazy"}" decoding="async"${index === 0 ? ' fetchpriority="high"' : ""}>
+              <img class="ba-slider-img" src="${escapeCmsText(project.after_image_url)}" alt="${escapeCmsText(project.title || "After cleaning")} after cleaning" loading="${index === 0 ? "eager" : "lazy"}" decoding="async" style="${imageFramingStyle(project, "after")}"${index === 0 ? ' fetchpriority="high"' : ""}>
               <div class="ba-slider-after">
-                <img class="ba-slider-img" src="${escapeCmsText(project.before_image_url)}" alt="${escapeCmsText(project.title || "Before cleaning")} before cleaning" loading="${index === 0 ? "eager" : "lazy"}" decoding="async">
+                <img class="ba-slider-img" src="${escapeCmsText(project.before_image_url)}" alt="${escapeCmsText(project.title || "Before cleaning")} before cleaning" loading="${index === 0 ? "eager" : "lazy"}" decoding="async" style="${imageFramingStyle(project, "before")}">
               </div>
               <span class="ba-label ba-label-before">Before</span>
               <span class="ba-label ba-label-after">After</span>
@@ -422,7 +460,7 @@ if (calculator) {
 
   const loadBeforeAfterContent = async () => {
     try {
-      const beforeAfterRows = await cmsRequest("before_after_projects", "?select=id,before_image_url,after_image_url,title,sort_order,is_active,created_at&is_active=eq.true&order=sort_order.asc,created_at.asc");
+      const beforeAfterRows = await cmsRequest("before_after_projects", "?select=id,before_image_url,after_image_url,title,sort_order,is_active,created_at,shared_zoom,before_zoom,after_zoom,before_position_x,before_position_y,after_position_x,after_position_y&is_active=eq.true&order=sort_order.asc,created_at.asc");
       if (!applyBeforeAfterProjects(beforeAfterRows)) {
         applyBeforeAfterProjects(fallbackBeforeAfterProjects);
       }
