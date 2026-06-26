@@ -620,21 +620,6 @@ const previewImage = (src, phase, framing) => `
   <img class="ba-live-img" ${src ? `src="${escapeHtml(src)}"` : ""} alt="" draggable="false" data-ba-framing-preview="${phase}" style="${imageFramingStyle(framing, phase)}" ${src ? "" : "hidden"}>
 `;
 
-const beforeAfterFramingPreview = (beforeSrc, afterSrc, framing) => `
-  <div class="ba-live-preview" data-ba-framing-live-preview>
-    <div class="ba-live-slider" aria-label="Before and after framing preview">
-      ${previewImage(afterSrc, "after", framing)}
-      <div class="ba-live-before">
-        ${previewImage(beforeSrc, "before", framing)}
-      </div>
-      <div class="ba-live-placeholder" data-ba-framing-placeholder ${beforeSrc || afterSrc ? "hidden" : ""}>Choose Before and After images to preview framing.</div>
-      <span class="ba-live-label ba-live-label-before">Before</span>
-      <span class="ba-live-label ba-live-label-after">After</span>
-      <div class="ba-live-divider" aria-hidden="true"></div>
-    </div>
-  </div>
-`;
-
 const framingRange = (attribute, field, label, value, min = 0, max = 100, step = 1) => `
   <label>
     <span>${label}</span>
@@ -642,24 +627,21 @@ const framingRange = (attribute, field, label, value, min = 0, max = 100, step =
   </label>
 `;
 
-const beforeAfterFramingControls = (attribute, framing) => `
-  <div class="ba-framing-controls" aria-label="Before and after image framing controls">
-    <h3>Framing</h3>
-    ${framingRange(attribute, "shared_zoom", "Overall zoom", framing.shared_zoom, 1, 3, 0.05)}
-    <div class="ba-framing-grid">
-      <fieldset>
-        <legend>Before image</legend>
-        ${framingRange(attribute, "before_zoom", "Zoom", framing.before_zoom, 1, 3, 0.05)}
-        ${framingRange(attribute, "before_position_x", "Horizontal position", framing.before_position_x)}
-        ${framingRange(attribute, "before_position_y", "Vertical position", framing.before_position_y)}
-      </fieldset>
-      <fieldset>
-        <legend>After image</legend>
-        ${framingRange(attribute, "after_zoom", "Zoom", framing.after_zoom, 1, 3, 0.05)}
-        ${framingRange(attribute, "after_position_x", "Horizontal position", framing.after_position_x)}
-        ${framingRange(attribute, "after_position_y", "Vertical position", framing.after_position_y)}
-      </fieldset>
+const beforeAfterFramingPanel = (attribute, phase, label, src, framing) => `
+  <div class="ba-framing-panel" data-ba-framing-panel="${phase}">
+    <div class="ba-live-preview" data-ba-framing-live-preview>
+      <div class="ba-live-frame" aria-label="${label} image framing preview">
+        ${previewImage(src, phase, framing)}
+        <div class="ba-live-placeholder" data-ba-framing-placeholder="${phase}" ${src ? "hidden" : ""}>Choose ${label} image</div>
+        <span class="ba-live-label">${label}</span>
+      </div>
     </div>
+    <fieldset>
+      <legend>${label} framing</legend>
+      ${framingRange(attribute, `${phase}_zoom`, "Zoom", framing[`${phase}_zoom`], 1, 3, 0.05)}
+      ${framingRange(attribute, `${phase}_position_x`, "Horizontal position", framing[`${phase}_position_x`])}
+      ${framingRange(attribute, `${phase}_position_y`, "Vertical position", framing[`${phase}_position_y`])}
+    </fieldset>
   </div>
 `;
 
@@ -667,8 +649,13 @@ const beforeAfterFramingEditor = ({ beforeSrc = "", afterSrc = "", framing = bef
   const values = projectFraming(framing);
   return `
     <div class="ba-framing-editor" data-ba-framing-editor>
-      ${beforeAfterFramingPreview(beforeSrc, afterSrc, values)}
-      ${beforeAfterFramingControls(attribute, values)}
+      <div class="ba-framing-overall">
+        ${framingRange(attribute, "shared_zoom", "Overall zoom", values.shared_zoom, 1, 3, 0.05)}
+      </div>
+      <div class="ba-framing-grid" aria-label="Before and after image framing controls">
+        ${beforeAfterFramingPanel(attribute, "before", "Before", beforeSrc, values)}
+        ${beforeAfterFramingPanel(attribute, "after", "After", afterSrc, values)}
+      </div>
     </div>
   `;
 };
@@ -769,9 +756,11 @@ const updateBeforeAfterFramingPreview = (editor) => {
 
 const updateBeforeAfterPreviewPlaceholder = (editor) => {
   if (!editor) return;
-  const hasImage = Array.from(editor.querySelectorAll("[data-ba-framing-preview]")).some((image) => image.src && !image.hidden);
-  const placeholder = editor.querySelector("[data-ba-framing-placeholder]");
-  if (placeholder) placeholder.hidden = hasImage;
+  editor.querySelectorAll("[data-ba-framing-placeholder]").forEach((placeholder) => {
+    const phase = placeholder.dataset.baFramingPlaceholder;
+    const image = editor.querySelector(`[data-ba-framing-preview="${phase}"]`);
+    placeholder.hidden = Boolean(image?.src && !image.hidden);
+  });
 };
 
 const setFramingPreviewImage = (editor, phase, src = "") => {
@@ -1367,7 +1356,7 @@ const updateFramingRangeFromPointer = (range, clientX) => {
 };
 
 document.addEventListener("pointerdown", (event) => {
-  const range = event.target.closest(".ba-framing-controls input[type='range']");
+  const range = event.target.closest(".ba-framing-editor input[type='range']");
   if (!range) return;
   event.preventDefault();
   document.body.classList.add("is-adjusting-framing");
@@ -1405,7 +1394,7 @@ document.addEventListener("pointercancel", () => {
 }, true);
 
 document.addEventListener("mousedown", (event) => {
-  const range = event.target.closest(".ba-framing-controls input[type='range']");
+  const range = event.target.closest(".ba-framing-editor input[type='range']");
   if (!range) return;
   event.preventDefault();
   document.body.classList.add("is-adjusting-framing");

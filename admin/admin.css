@@ -296,22 +296,31 @@ textarea:focus {
 
 .ba-framing-editor {
   display: grid;
-  gap: 12px;
+  gap: 10px;
+  max-width: 900px;
 }
 
-.ba-live-preview {
-  width: 100%;
-  max-width: 760px;
+.ba-framing-overall {
+  max-width: 420px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #f8fafc;
 }
 
-.ba-live-slider {
-  --position: 50%;
-  --position-num: .5;
+.ba-framing-overall label,
+.ba-framing-panel fieldset {
+  display: grid;
+  gap: 8px;
+}
+
+.ba-live-frame {
   position: relative;
   width: 100%;
   aspect-ratio: 1.22 / .82;
   overflow: hidden;
-  border-radius: 22px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
   background: #e5e7eb;
   user-select: none;
   -webkit-user-drag: none;
@@ -330,24 +339,12 @@ textarea:focus {
   -webkit-user-drag: none;
 }
 
-.ba-live-before {
-  position: absolute;
-  inset: 0;
-  width: var(--position);
-  overflow: hidden;
-}
-
-.ba-live-before .ba-live-img {
-  width: calc(100% / (var(--position-num, .5)));
-  min-width: 100%;
-}
-
 .ba-live-placeholder {
   position: absolute;
   inset: 0;
   display: grid;
   place-items: center;
-  padding: 22px;
+  padding: 18px;
   color: var(--muted);
   text-align: center;
   font-weight: 800;
@@ -355,71 +352,19 @@ textarea:focus {
 
 .ba-live-label {
   position: absolute;
-  top: 18px;
+  top: 12px;
+  left: 12px;
   z-index: 2;
-  padding: 8px 12px;
+  padding: 7px 10px;
   border-radius: 999px;
+  background: rgba(15, 23, 42, .78);
   color: var(--white);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 900;
   line-height: 1;
 }
 
-.ba-live-label-before {
-  left: 18px;
-  background: #dc2626;
-}
-
-.ba-live-label-after {
-  right: 18px;
-  background: #16a34a;
-}
-
-.ba-live-divider {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: var(--position);
-  z-index: 2;
-  width: 4px;
-  background: var(--white);
-  transform: translateX(-50%);
-}
-
-.ba-live-divider::after {
-  content: "↔";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 42px;
-  height: 42px;
-  display: grid;
-  place-items: center;
-  border-radius: 999px;
-  background: var(--white);
-  color: var(--black);
-  font-weight: 950;
-  transform: translate(-50%, -50%);
-  box-shadow: 0 14px 28px rgba(15, 23, 42, .22);
-}
-
-.ba-framing-controls {
-  display: grid;
-  gap: 12px;
-  padding: 14px;
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  background: #f8fafc;
-  max-width: 760px;
-}
-
-.ba-framing-controls h3 {
-  margin: 0;
-  color: var(--black);
-  font-size: 16px;
-}
-
-.ba-framing-controls input[type="range"] {
+.ba-framing-editor input[type="range"] {
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
@@ -434,17 +379,17 @@ textarea:focus {
   touch-action: none;
 }
 
-.ba-framing-controls input[type="range"]:focus {
+.ba-framing-editor input[type="range"]:focus {
   box-shadow: none;
 }
 
-.ba-framing-controls input[type="range"]::-webkit-slider-runnable-track {
+.ba-framing-editor input[type="range"]::-webkit-slider-runnable-track {
   height: 6px;
   border-radius: 999px;
   background: #d1d5db;
 }
 
-.ba-framing-controls input[type="range"]::-webkit-slider-thumb {
+.ba-framing-editor input[type="range"]::-webkit-slider-thumb {
   width: 20px;
   height: 20px;
   margin-top: -7px;
@@ -456,17 +401,17 @@ textarea:focus {
   -webkit-appearance: none;
 }
 
-.ba-framing-controls input[type="range"]:active::-webkit-slider-thumb {
+.ba-framing-editor input[type="range"]:active::-webkit-slider-thumb {
   cursor: grabbing;
 }
 
-.ba-framing-controls input[type="range"]::-moz-range-track {
+.ba-framing-editor input[type="range"]::-moz-range-track {
   height: 6px;
   border-radius: 999px;
   background: #d1d5db;
 }
 
-.ba-framing-controls input[type="range"]::-moz-range-thumb {
+.ba-framing-editor input[type="range"]::-moz-range-thumb {
   width: 16px;
   height: 16px;
   border: 3px solid var(--white);
@@ -479,20 +424,28 @@ textarea:focus {
 .ba-framing-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+  gap: 12px;
 }
 
-.ba-framing-grid fieldset {
+.ba-framing-panel {
   display: grid;
-  gap: 10px;
-  margin: 0;
-  padding: 14px;
+  gap: 8px;
+  padding: 10px;
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: 16px;
+  background: #f8fafc;
 }
 
-.ba-framing-grid legend {
-  padding: 0 6px;
+.ba-framing-panel fieldset {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.ba-framing-panel legend {
+  padding: 0;
   color: var(--black);
   font-weight: 900;
 }
