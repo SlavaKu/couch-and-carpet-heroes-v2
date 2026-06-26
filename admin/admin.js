@@ -21,6 +21,7 @@ const beforeAfterBeforeInput = document.querySelector("[data-ba-before-file]");
 const beforeAfterAfterInput = document.querySelector("[data-ba-after-file]");
 const beforeAfterTitleInput = document.querySelector("[data-ba-title]");
 const beforeAfterActiveInput = document.querySelector("[data-ba-active]");
+const beforeAfterAddEditor = document.querySelector("[data-ba-add-editor]");
 const beforeAfterFramingDefaults = {
   shared_zoom: 1,
   before_zoom: 1,
@@ -152,6 +153,9 @@ let beforeAfterProjects = [];
 let activeIconFeatureId = "";
 let selectedIconFile = null;
 let selectedIconPreviewUrl = "";
+let activeFramingDragCard = null;
+let activeFramingRange = null;
+let activeFramingPointerId = null;
 let isAdminLoading = false;
 let contentLoaded = false;
 let whyFeaturesLoadedFromSupabase = false;
@@ -612,12 +616,62 @@ const imageFramingStyle = (framing, phase) => {
   return `object-position: ${x}% ${y}%; transform: scale(${zoom}); transform-origin: ${x}% ${y}%;`;
 };
 
-const framingRange = (field, label, value, min = 0, max = 100, step = 1) => `
+const previewImage = (src, phase, framing) => `
+  <img class="ba-live-img" ${src ? `src="${escapeHtml(src)}"` : ""} alt="" draggable="false" data-ba-framing-preview="${phase}" style="${imageFramingStyle(framing, phase)}" ${src ? "" : "hidden"}>
+`;
+
+const beforeAfterFramingPreview = (beforeSrc, afterSrc, framing) => `
+  <div class="ba-live-preview" data-ba-framing-live-preview>
+    <div class="ba-live-slider" aria-label="Before and after framing preview">
+      ${previewImage(afterSrc, "after", framing)}
+      <div class="ba-live-before">
+        ${previewImage(beforeSrc, "before", framing)}
+      </div>
+      <div class="ba-live-placeholder" data-ba-framing-placeholder ${beforeSrc || afterSrc ? "hidden" : ""}>Choose Before and After images to preview framing.</div>
+      <span class="ba-live-label ba-live-label-before">Before</span>
+      <span class="ba-live-label ba-live-label-after">After</span>
+      <div class="ba-live-divider" aria-hidden="true"></div>
+    </div>
+  </div>
+`;
+
+const framingRange = (attribute, field, label, value, min = 0, max = 100, step = 1) => `
   <label>
-    ${label}
-    <input type="range" data-ba-project-field="${field}" min="${min}" max="${max}" step="${step}" value="${value}">
+    <span>${label}</span>
+    <input type="range" ${attribute}="${field}" min="${min}" max="${max}" step="${step}" value="${value}" draggable="false">
   </label>
 `;
+
+const beforeAfterFramingControls = (attribute, framing) => `
+  <div class="ba-framing-controls" aria-label="Before and after image framing controls">
+    <h3>Framing</h3>
+    ${framingRange(attribute, "shared_zoom", "Overall zoom", framing.shared_zoom, 1, 3, 0.05)}
+    <div class="ba-framing-grid">
+      <fieldset>
+        <legend>Before image</legend>
+        ${framingRange(attribute, "before_zoom", "Zoom", framing.before_zoom, 1, 3, 0.05)}
+        ${framingRange(attribute, "before_position_x", "Horizontal position", framing.before_position_x)}
+        ${framingRange(attribute, "before_position_y", "Vertical position", framing.before_position_y)}
+      </fieldset>
+      <fieldset>
+        <legend>After image</legend>
+        ${framingRange(attribute, "after_zoom", "Zoom", framing.after_zoom, 1, 3, 0.05)}
+        ${framingRange(attribute, "after_position_x", "Horizontal position", framing.after_position_x)}
+        ${framingRange(attribute, "after_position_y", "Vertical position", framing.after_position_y)}
+      </fieldset>
+    </div>
+  </div>
+`;
+
+const beforeAfterFramingEditor = ({ beforeSrc = "", afterSrc = "", framing = beforeAfterFramingDefaults, attribute = "data-ba-project-field" } = {}) => {
+  const values = projectFraming(framing);
+  return `
+    <div class="ba-framing-editor" data-ba-framing-editor>
+      ${beforeAfterFramingPreview(beforeSrc, afterSrc, values)}
+      ${beforeAfterFramingControls(attribute, values)}
+    </div>
+  `;
+};
 
 function renderBeforeAfterProjects() {
   if (!lists.beforeAfter) return;
@@ -640,10 +694,12 @@ function renderBeforeAfterProjects() {
         </div>
       </div>
       <div class="ba-project-edit" data-ba-project-edit hidden>
-      <div class="ba-admin-preview">
-        <img src="${escapeHtml(project.before_image_url || "")}" alt="" data-ba-framing-preview="before" style="${imageFramingStyle(framing, "before")}">
-        <img src="${escapeHtml(project.after_image_url || "")}" alt="" data-ba-framing-preview="after" style="${imageFramingStyle(framing, "after")}">
-      </div>
+      ${beforeAfterFramingEditor({
+        beforeSrc: project.before_image_url,
+        afterSrc: project.after_image_url,
+        framing,
+        attribute: "data-ba-project-field"
+      })}
       <label>
         Title
         <input type="text" data-ba-project-field="title" value="${escapeHtml(project.title || "")}">
@@ -664,24 +720,6 @@ function renderBeforeAfterProjects() {
         Replace After image
         <input type="file" data-ba-project-field="after_file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
       </label>
-      <div class="ba-framing-controls" aria-label="Before and after image framing controls">
-        <h3>Framing</h3>
-        ${framingRange("shared_zoom", "Overall zoom", framing.shared_zoom, 1, 3, 0.05)}
-        <div class="ba-framing-grid">
-          <fieldset>
-            <legend>Before image</legend>
-            ${framingRange("before_zoom", "Before zoom", framing.before_zoom, 1, 3, 0.05)}
-            ${framingRange("before_position_x", "Horizontal position", framing.before_position_x)}
-            ${framingRange("before_position_y", "Vertical position", framing.before_position_y)}
-          </fieldset>
-          <fieldset>
-            <legend>After image</legend>
-            ${framingRange("after_zoom", "After zoom", framing.after_zoom, 1, 3, 0.05)}
-            ${framingRange("after_position_x", "Horizontal position", framing.after_position_x)}
-            ${framingRange("after_position_y", "Vertical position", framing.after_position_y)}
-          </fieldset>
-        </div>
-      </div>
       <button class="btn btn-primary" type="button" data-save-before-after-project="${project.id}">Save Changes</button>
       </div>
     </article>
@@ -713,12 +751,95 @@ const readFramingFromCard = (card) => Object.fromEntries(
   })
 );
 
-const updateBeforeAfterFramingPreview = (card) => {
-  if (!card) return;
-  const framing = readFramingFromCard(card);
-  card.querySelectorAll("[data-ba-framing-preview]").forEach((image) => {
+const readFramingFromEditor = (editor) => Object.fromEntries(
+  Object.keys(beforeAfterFramingDefaults).map((field) => {
+    const input = editor?.querySelector(`[data-ba-project-field="${field}"], [data-ba-add-field="${field}"]`);
+    const value = input?.value ?? beforeAfterFramingDefaults[field];
+    return [field, field.includes("zoom") ? framingZoom(value) : framingPercent(value)];
+  })
+);
+
+const updateBeforeAfterFramingPreview = (editor) => {
+  if (!editor) return;
+  const framing = readFramingFromEditor(editor);
+  editor.querySelectorAll("[data-ba-framing-preview]").forEach((image) => {
     image.setAttribute("style", imageFramingStyle(framing, image.dataset.baFramingPreview));
   });
+};
+
+const updateBeforeAfterPreviewPlaceholder = (editor) => {
+  if (!editor) return;
+  const hasImage = Array.from(editor.querySelectorAll("[data-ba-framing-preview]")).some((image) => image.src && !image.hidden);
+  const placeholder = editor.querySelector("[data-ba-framing-placeholder]");
+  if (placeholder) placeholder.hidden = hasImage;
+};
+
+const setFramingPreviewImage = (editor, phase, src = "") => {
+  const image = editor?.querySelector(`[data-ba-framing-preview="${phase}"]`);
+  if (!image) return;
+  image.src = src;
+  image.hidden = !src;
+  updateBeforeAfterFramingPreview(editor);
+  updateBeforeAfterPreviewPlaceholder(editor);
+};
+
+const addBeforeAfterPreviewUrls = { before: "", after: "" };
+
+const setAddBeforeAfterPreviewFile = (phase, file) => {
+  if (!beforeAfterAddEditor) return;
+  if (addBeforeAfterPreviewUrls[phase]) URL.revokeObjectURL(addBeforeAfterPreviewUrls[phase]);
+  addBeforeAfterPreviewUrls[phase] = "";
+
+  if (!file) {
+    setFramingPreviewImage(beforeAfterAddEditor, phase, "");
+    return;
+  }
+
+  if (!isAllowedProjectImage(file)) {
+    setMessage(beforeAfterMessage, "Please choose a JPG, PNG, or WEBP image.", "error");
+    setFramingPreviewImage(beforeAfterAddEditor, phase, "");
+    return;
+  }
+
+  addBeforeAfterPreviewUrls[phase] = URL.createObjectURL(file);
+  setFramingPreviewImage(beforeAfterAddEditor, phase, addBeforeAfterPreviewUrls[phase]);
+  setMessage(beforeAfterMessage, "");
+};
+
+const resetAddBeforeAfterEditor = () => {
+  Object.entries(addBeforeAfterPreviewUrls).forEach(([phase, url]) => {
+    if (url) URL.revokeObjectURL(url);
+    addBeforeAfterPreviewUrls[phase] = "";
+  });
+  if (!beforeAfterAddEditor) return;
+  beforeAfterAddEditor.innerHTML = beforeAfterFramingEditor({
+    framing: beforeAfterFramingDefaults,
+    attribute: "data-ba-add-field"
+  });
+};
+
+const readAddBeforeAfterFraming = () => readFramingFromEditor(beforeAfterAddEditor);
+
+const previewFileObjectUrls = new WeakMap();
+
+const setEditBeforeAfterPreviewFile = (input, phase) => {
+  const editor = input?.closest("[data-ba-project-id]")?.querySelector("[data-ba-framing-editor]");
+  if (!editor) return;
+  const existingUrl = previewFileObjectUrls.get(input);
+  if (existingUrl) URL.revokeObjectURL(existingUrl);
+  previewFileObjectUrls.delete(input);
+
+  const file = input.files?.[0];
+  if (!file) return;
+  if (!isAllowedProjectImage(file)) {
+    setMessage(beforeAfterMessage, "Please choose a JPG, PNG, or WEBP image.", "error");
+    input.value = "";
+    return;
+  }
+
+  const previewUrl = URL.createObjectURL(file);
+  previewFileObjectUrls.set(input, previewUrl);
+  setFramingPreviewImage(editor, phase, previewUrl);
 };
 
 const isAllowedProjectImage = (file) => {
@@ -854,7 +975,7 @@ async function createBeforeAfterProject() {
     title,
     sort_order: nextOrder,
     is_active: Boolean(beforeAfterActiveInput?.checked),
-    ...beforeAfterFramingDefaults
+    ...readAddBeforeAfterFraming()
   });
 
   if (error) {
@@ -866,6 +987,7 @@ async function createBeforeAfterProject() {
   if (beforeAfterAfterInput) beforeAfterAfterInput.value = "";
   if (beforeAfterTitleInput) beforeAfterTitleInput.value = "";
   if (beforeAfterActiveInput) beforeAfterActiveInput.checked = true;
+  resetAddBeforeAfterEditor();
   await loadBeforeAfterProjects();
   setMessage(beforeAfterMessage, "Saved successfully", "success");
 }
@@ -1213,6 +1335,8 @@ async function uploadIconForActiveFeature() {
   closeIconModal();
 }
 
+resetAddBeforeAfterEditor();
+
 document.addEventListener("input", (event) => {
   const key = event.target.dataset.setting;
   if (!key) return;
@@ -1220,6 +1344,92 @@ document.addEventListener("input", (event) => {
     if (input !== event.target) input.value = event.target.value;
   });
 });
+
+document.addEventListener("dragstart", (event) => {
+  if (event.target.closest("[data-ba-framing-editor]")) event.preventDefault();
+});
+
+const updateFramingRangeFromPointer = (range, clientX) => {
+  if (!range) return;
+  const rect = range.getBoundingClientRect();
+  if (!rect.width) return;
+  const min = Number(range.min || 0);
+  const max = Number(range.max || 100);
+  const step = Number(range.step || 1);
+  const rawPercent = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+  const rawValue = min + rawPercent * (max - min);
+  const steppedValue = Math.round((rawValue - min) / step) * step + min;
+  const precision = String(range.step || "").includes(".")
+    ? String(range.step).split(".")[1].length
+    : 0;
+  range.value = String(Math.min(max, Math.max(min, Number(steppedValue.toFixed(precision)))));
+  range.dispatchEvent(new Event("input", { bubbles: true }));
+};
+
+document.addEventListener("pointerdown", (event) => {
+  const range = event.target.closest(".ba-framing-controls input[type='range']");
+  if (!range) return;
+  event.preventDefault();
+  document.body.classList.add("is-adjusting-framing");
+  activeFramingRange = range;
+  activeFramingPointerId = event.pointerId;
+  activeFramingDragCard = range.closest("[data-ba-project-id]");
+  if (activeFramingDragCard) activeFramingDragCard.draggable = false;
+  range.setPointerCapture?.(event.pointerId);
+  updateFramingRangeFromPointer(range, event.clientX);
+}, true);
+
+document.addEventListener("pointermove", (event) => {
+  if (!activeFramingRange || event.pointerId !== activeFramingPointerId) return;
+  event.preventDefault();
+  updateFramingRangeFromPointer(activeFramingRange, event.clientX);
+}, true);
+
+document.addEventListener("pointerup", () => {
+  if (activeFramingRange) {
+    activeFramingRange.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+  document.body.classList.remove("is-adjusting-framing");
+  if (activeFramingDragCard) activeFramingDragCard.draggable = true;
+  activeFramingRange = null;
+  activeFramingPointerId = null;
+  activeFramingDragCard = null;
+}, true);
+
+document.addEventListener("pointercancel", () => {
+  document.body.classList.remove("is-adjusting-framing");
+  if (activeFramingDragCard) activeFramingDragCard.draggable = true;
+  activeFramingRange = null;
+  activeFramingPointerId = null;
+  activeFramingDragCard = null;
+}, true);
+
+document.addEventListener("mousedown", (event) => {
+  const range = event.target.closest(".ba-framing-controls input[type='range']");
+  if (!range) return;
+  event.preventDefault();
+  document.body.classList.add("is-adjusting-framing");
+  activeFramingRange = range;
+  activeFramingDragCard = range.closest("[data-ba-project-id]");
+  if (activeFramingDragCard) activeFramingDragCard.draggable = false;
+  updateFramingRangeFromPointer(range, event.clientX);
+}, true);
+
+document.addEventListener("mousemove", (event) => {
+  if (!activeFramingRange) return;
+  event.preventDefault();
+  updateFramingRangeFromPointer(activeFramingRange, event.clientX);
+}, true);
+
+document.addEventListener("mouseup", () => {
+  if (!activeFramingRange) return;
+  activeFramingRange.dispatchEvent(new Event("change", { bubbles: true }));
+  document.body.classList.remove("is-adjusting-framing");
+  if (activeFramingDragCard) activeFramingDragCard.draggable = true;
+  activeFramingRange = null;
+  activeFramingPointerId = null;
+  activeFramingDragCard = null;
+}, true);
 
 loginForm.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -1291,6 +1501,14 @@ document.querySelector("[data-save-before-after]").addEventListener("click", () 
   handleSave(async () => {
     await createBeforeAfterProject();
   });
+});
+
+beforeAfterBeforeInput?.addEventListener("change", () => {
+  setAddBeforeAfterPreviewFile("before", beforeAfterBeforeInput.files?.[0]);
+});
+
+beforeAfterAfterInput?.addEventListener("change", () => {
+  setAddBeforeAfterPreviewFile("after", beforeAfterAfterInput.files?.[0]);
 });
 
 document.querySelector("[data-save-faqs]").addEventListener("click", () => {
@@ -1449,7 +1667,24 @@ lists.beforeAfter?.addEventListener("click", async (event) => {
 lists.beforeAfter?.addEventListener("input", (event) => {
   const input = event.target.closest("[data-ba-project-field]");
   if (!input || !Object.hasOwn(beforeAfterFramingDefaults, input.dataset.baProjectField)) return;
-  updateBeforeAfterFramingPreview(input.closest("[data-ba-project-id]"));
+  updateBeforeAfterFramingPreview(input.closest("[data-ba-framing-editor]"));
+});
+
+beforeAfterAddEditor?.addEventListener("input", (event) => {
+  const input = event.target.closest("[data-ba-add-field]");
+  if (!input || !Object.hasOwn(beforeAfterFramingDefaults, input.dataset.baAddField)) return;
+  updateBeforeAfterFramingPreview(input.closest("[data-ba-framing-editor]"));
+});
+
+lists.beforeAfter?.addEventListener("change", (event) => {
+  const beforeFile = event.target.closest('[data-ba-project-field="before_file"]');
+  if (beforeFile) {
+    setEditBeforeAfterPreviewFile(beforeFile, "before");
+    return;
+  }
+
+  const afterFile = event.target.closest('[data-ba-project-field="after_file"]');
+  if (afterFile) setEditBeforeAfterPreviewFile(afterFile, "after");
 });
 
 let draggedBeforeAfterId = "";
@@ -1457,6 +1692,10 @@ let draggedBeforeAfterId = "";
 lists.beforeAfter?.addEventListener("dragstart", (event) => {
   const card = event.target.closest("[data-ba-project-id]");
   if (!card) return;
+  if (!event.target.closest(".ba-drag-handle")) {
+    event.preventDefault();
+    return;
+  }
   draggedBeforeAfterId = card.dataset.baProjectId;
   event.dataTransfer.effectAllowed = "move";
 });
