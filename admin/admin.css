@@ -333,7 +333,7 @@ textarea:focus {
   height: 100%;
   max-width: none;
   display: block;
-  object-fit: cover;
+  object-fit: contain;
   pointer-events: none;
   user-select: none;
   -webkit-user-drag: none;
