@@ -1,76 +1,50 @@
 const carpetCleaningMedia = {
   beforeAfter: [
-    {
-      title: "Living Room Carpet Refresh",
-      beforeSrc: "../assets/project-living-room.png",
-      beforeAlt: "Before carpet cleaning in a lived-in Bay Area living room",
-      afterSrc: "../assets/hero-clean-living-room.png",
-      afterAlt: "After carpet cleaning showing a fresher living room carpet"
-    },
-    {
-      title: "Office Carpet Traffic Lane Refresh",
-      beforeSrc: "../assets/project-restaurant.png",
-      beforeAlt: "Before commercial carpet cleaning in a high-traffic business space",
-      afterSrc: "../assets/project-office.png",
-      afterAlt: "After commercial carpet cleaning in a brighter office space"
-    },
-    {
-      title: "Upholstery and Carpet Area Refresh",
-      beforeSrc: "../assets/before-sofa.png",
-      beforeAlt: "Before cleaning example with visible everyday soil near carpet and upholstery",
-      afterSrc: "../assets/after-sofa.png",
-      afterAlt: "After cleaning example showing a fresher carpet and upholstery area"
-    }
+    { title: "Living Room Carpet Refresh", beforeSrc: "../assets/project-living-room.png", beforeAlt: "Before carpet cleaning in a lived-in Bay Area living room", afterSrc: "../assets/hero-clean-living-room.png", afterAlt: "After carpet cleaning showing a fresher living room carpet" },
+    { title: "Office Carpet Traffic Lane Refresh", beforeSrc: "../assets/project-restaurant.png", beforeAlt: "Before commercial carpet cleaning in a high-traffic business space", afterSrc: "../assets/project-office.png", afterAlt: "After commercial carpet cleaning in a brighter office space" },
+    { title: "Upholstery and Carpet Area Refresh", beforeSrc: "../assets/before-sofa.png", beforeAlt: "Before cleaning example with visible everyday soil near carpet and upholstery", afterSrc: "../assets/after-sofa.png", afterAlt: "After cleaning example showing a fresher carpet and upholstery area" }
   ],
   gallery: [
-    {
-      src: "../assets/hero-clean-living-room.png",
-      alt: "Clean living room carpet after a professional cleaning service",
-      title: "Fresh Living Room",
-      description: "A clean, comfortable look for everyday family spaces."
-    },
-    {
-      src: "../assets/project-living-room.png",
-      alt: "Residential carpet cleaning example in a Bay Area living room",
-      title: "Residential Carpet Care",
-      description: "Carpet cleaning for rooms, hallways and high-traffic areas."
-    },
-    {
-      src: "../assets/project-office.png",
-      alt: "Clean office carpet after commercial carpet cleaning",
-      title: "Office Carpet Cleaning",
-      description: "A cleaner impression for employees, clients and guests."
-    },
-    {
-      src: "../assets/project-restaurant.png",
-      alt: "Commercial carpet cleaning example for a customer-facing space",
-      title: "Commercial Spaces",
-      description: "Practical cleaning for rentals, offices and shared spaces."
-    }
+    { src: "../assets/hero-clean-living-room.png", alt: "Clean living room carpet after a professional cleaning service", title: "Fresh Living Room", description: "A clean, comfortable look for everyday family spaces." },
+    { src: "../assets/project-living-room.png", alt: "Residential carpet cleaning example in a Bay Area living room", title: "Residential Carpet Care", description: "Carpet cleaning for rooms, hallways and high-traffic areas." },
+    { src: "../assets/project-office.png", alt: "Clean office carpet after commercial carpet cleaning", title: "Office Carpet Cleaning", description: "A cleaner impression for employees, clients and guests." },
+    { src: "../assets/project-restaurant.png", alt: "Commercial carpet cleaning example for a customer-facing space", title: "Commercial Spaces", description: "Practical cleaning for rentals, offices and shared spaces." }
   ],
   imageBreaks: {
-    moveReady: {
-      src: "../assets/hero-clean-living-room.png",
-      alt: "Clean carpet in a bright living room ready for move-in or guests",
-      title: "Move-ready rooms",
-      description: "A clean carpet can help a home, rental or apartment feel fresher before the next chapter."
-    },
-    cleanVsReplace: {
-      src: "../assets/project-office.png",
-      alt: "Freshly cleaned carpet in a professional office space",
-      title: "A smarter first step",
-      description: "When carpet still has useful life left, professional cleaning can improve the space before replacement is considered."
-    }
+    moveReady: { src: "../assets/hero-clean-living-room.png", alt: "Clean carpet in a bright living room ready for move-in or guests", title: "Move-ready rooms", description: "A clean carpet can help a home, rental or apartment feel fresher before the next chapter." },
+    cleanVsReplace: { src: "../assets/project-office.png", alt: "Freshly cleaned carpet in a professional office space", title: "A smarter first step", description: "When carpet still has useful life left, professional cleaning can improve the space before replacement is considered." }
   }
 };
+const defaultServicePageMedia = typeof carpetCleaningMedia !== "undefined" ? carpetCleaningMedia : {
+  beforeAfter: [],
+  gallery: [],
+  imageBreaks: {}
+};
 
-const escapeServiceComponentText = (value) => String(value).replace(/[&<>"']/g, (char) => ({
+const servicePageMedia = window.servicePageMedia || defaultServicePageMedia;
+const servicePageComponentConfig = {
+  beforeAfterTitle: "Carpet Cleaning Before & After",
+  beforeAfterDescription: "Browse temporary cleaning examples. Final project photos can be swapped in one data list later.",
+  beforeAfterControlsLabel: "Carpet cleaning before and after controls",
+  beforeAfterDotLabel: "Show carpet cleaning before and after example",
+  ...window.servicePageComponentConfig
+};
+
+const escapeServiceComponentText = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({
   "&": "&amp;",
   "<": "&lt;",
   ">": "&gt;",
   '"': "&quot;",
   "'": "&#039;"
 })[char]);
+
+const buildResponsiveImageAttrs = (item, isHero = false) => {
+  const srcset = item.srcset ? ` srcset="${escapeServiceComponentText(item.srcset)}"` : "";
+  const sizes = item.sizes ? ` sizes="${escapeServiceComponentText(item.sizes)}"` : "";
+  const loading = isHero ? "eager" : "lazy";
+  const fetchPriority = isHero ? ' fetchpriority="high"' : "";
+  return `${srcset}${sizes} loading="${loading}" decoding="async"${fetchPriority}`;
+};
 
 const renderServiceBeforeAfter = (root, items) => {
   if (!root || !items.length) return;
@@ -79,12 +53,12 @@ const renderServiceBeforeAfter = (root, items) => {
     <div class="ba-carousel hero-ba-carousel" data-service-ba-carousel>
       <div class="ba-carousel-top">
         <div>
-          <h3>Carpet Cleaning Before & After</h3>
-          <p>Browse temporary cleaning examples. Final project photos can be swapped in one data list later.</p>
+          <h3>${escapeServiceComponentText(servicePageComponentConfig.beforeAfterTitle)}</h3>
+          <p>${escapeServiceComponentText(servicePageComponentConfig.beforeAfterDescription)}</p>
         </div>
-        <div class="ba-controls" aria-label="Carpet cleaning before and after controls">
-          <button class="ba-nav-btn" type="button" data-service-ba-prev aria-label="Previous carpet cleaning example">&lsaquo;</button>
-          <button class="ba-nav-btn" type="button" data-service-ba-next aria-label="Next carpet cleaning example">&rsaquo;</button>
+        <div class="ba-controls" aria-label="${escapeServiceComponentText(servicePageComponentConfig.beforeAfterControlsLabel)}">
+          <button class="ba-nav-btn" type="button" data-service-ba-prev aria-label="Previous before and after example">&lsaquo;</button>
+          <button class="ba-nav-btn" type="button" data-service-ba-next aria-label="Next before and after example">&rsaquo;</button>
         </div>
       </div>
       <div class="ba-slides">
@@ -92,9 +66,9 @@ const renderServiceBeforeAfter = (root, items) => {
           <article class="ba-slide ${index === 0 ? "is-active" : ""}" data-service-ba-slide aria-hidden="${index === 0 ? "false" : "true"}">
               <div class="ba-slider-card">
                 <div class="ba-slider" data-service-ba-slider style="--position: 50%; --position-num: .5;">
-                <img class="ba-slider-img" src="${escapeServiceComponentText(item.afterSrc)}" alt="${escapeServiceComponentText(item.afterAlt)}" loading="${index === 0 ? "eager" : "lazy"}" decoding="async"${index === 0 ? ' fetchpriority="high"' : ""}>
+                <img class="ba-slider-img" src="${escapeServiceComponentText(item.afterSrc)}" alt="${escapeServiceComponentText(item.afterAlt)}"${buildResponsiveImageAttrs({ srcset: item.afterSrcset, sizes: item.sizes }, index === 0)}>
                 <div class="ba-slider-after">
-                  <img class="ba-slider-img" src="${escapeServiceComponentText(item.beforeSrc)}" alt="${escapeServiceComponentText(item.beforeAlt)}" loading="${index === 0 ? "eager" : "lazy"}" decoding="async"${index === 0 ? ' fetchpriority="high"' : ""}>
+                  <img class="ba-slider-img" src="${escapeServiceComponentText(item.beforeSrc)}" alt="${escapeServiceComponentText(item.beforeAlt)}"${buildResponsiveImageAttrs({ srcset: item.beforeSrcset, sizes: item.sizes }, index === 0)}>
                 </div>
                 <span class="ba-label ba-label-before">Before</span>
                 <span class="ba-label ba-label-after">After</span>
@@ -106,7 +80,7 @@ const renderServiceBeforeAfter = (root, items) => {
           </article>
         `).join("")}
       </div>
-      <div class="ba-dots" data-service-ba-dots aria-label="Carpet cleaning before and after examples"></div>
+      <div class="ba-dots" data-service-ba-dots aria-label="Before and after examples"></div>
     </div>
   `;
 
@@ -140,7 +114,7 @@ const initializeServiceBeforeAfter = (carousel) => {
     const dot = document.createElement("button");
     dot.type = "button";
     dot.className = "ba-dot";
-    dot.setAttribute("aria-label", `Show carpet cleaning before and after example ${index + 1}`);
+    dot.setAttribute("aria-label", `${servicePageComponentConfig.beforeAfterDotLabel} ${index + 1}`);
     dot.addEventListener("click", () => showSlide(index));
     dotsRoot.appendChild(dot);
     return dot;
@@ -170,7 +144,7 @@ const renderServiceGallery = (root, items) => {
     <div class="project-grid">
       ${items.map((item) => `
         <article class="project-card">
-          <img src="${escapeServiceComponentText(item.src)}" alt="${escapeServiceComponentText(item.alt)}" loading="lazy" decoding="async">
+          <img src="${escapeServiceComponentText(item.src)}" alt="${escapeServiceComponentText(item.alt)}"${buildResponsiveImageAttrs(item)}>
           <div class="project-info">
             <h3>${escapeServiceComponentText(item.title)}</h3>
             <p>${escapeServiceComponentText(item.description)}</p>
@@ -185,7 +159,7 @@ const renderServiceImageBreak = (root, item) => {
   if (!root || !item) return;
   root.innerHTML = `
     <div class="hero-card">
-      <img class="hero-photo" src="${escapeServiceComponentText(item.src)}" alt="${escapeServiceComponentText(item.alt)}" loading="lazy" decoding="async">
+      <img class="hero-photo" src="${escapeServiceComponentText(item.src)}" alt="${escapeServiceComponentText(item.alt)}"${buildResponsiveImageAttrs(item)}>
       <div class="hero-card-body">
         <div>
           <div class="mini-title">${escapeServiceComponentText(item.title)}</div>
@@ -197,9 +171,10 @@ const renderServiceImageBreak = (root, item) => {
 };
 
 document.addEventListener("DOMContentLoaded", () => {
-  renderServiceBeforeAfter(document.querySelector("[data-service-before-after-root]"), carpetCleaningMedia.beforeAfter);
-  renderServiceGallery(document.querySelector("[data-service-gallery-root]"), carpetCleaningMedia.gallery);
+  renderServiceBeforeAfter(document.querySelector("[data-service-before-after-root]"), servicePageMedia.beforeAfter || []);
+  renderServiceGallery(document.querySelector("[data-service-gallery-root]"), servicePageMedia.gallery || []);
   document.querySelectorAll("[data-service-image-break]").forEach((root) => {
-    renderServiceImageBreak(root, carpetCleaningMedia.imageBreaks[root.dataset.serviceImageBreak]);
+    renderServiceImageBreak(root, (servicePageMedia.imageBreaks || {})[root.dataset.serviceImageBreak]);
   });
 });
+
