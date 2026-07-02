@@ -47,7 +47,21 @@ const carpetCleaningMedia = {
       title: "Commercial Spaces",
       description: "Practical cleaning for rentals, offices and shared spaces."
     }
-  ]
+  ],
+  imageBreaks: {
+    moveReady: {
+      src: "../assets/hero-clean-living-room.png",
+      alt: "Clean carpet in a bright living room ready for move-in or guests",
+      title: "Move-ready rooms",
+      description: "A clean carpet can help a home, rental or apartment feel fresher before the next chapter."
+    },
+    cleanVsReplace: {
+      src: "../assets/project-office.png",
+      alt: "Freshly cleaned carpet in a professional office space",
+      title: "A smarter first step",
+      description: "When carpet still has useful life left, professional cleaning can improve the space before replacement is considered."
+    }
+  }
 };
 
 const escapeServiceComponentText = (value) => String(value).replace(/[&<>"']/g, (char) => ({
@@ -62,11 +76,11 @@ const renderServiceBeforeAfter = (root, items) => {
   if (!root || !items.length) return;
 
   root.innerHTML = `
-    <div class="ba-carousel" data-service-ba-carousel>
+    <div class="ba-carousel hero-ba-carousel" data-service-ba-carousel>
       <div class="ba-carousel-top">
         <div>
-          <h3>Realistic cleaning examples</h3>
-          <p>Use the handle to compare each temporary example. Final project photos can be swapped in one data list later.</p>
+          <h3>Carpet Cleaning Before & After</h3>
+          <p>Browse temporary cleaning examples. Final project photos can be swapped in one data list later.</p>
         </div>
         <div class="ba-controls" aria-label="Carpet cleaning before and after controls">
           <button class="ba-nav-btn" type="button" data-service-ba-prev aria-label="Previous carpet cleaning example">&lsaquo;</button>
@@ -76,11 +90,11 @@ const renderServiceBeforeAfter = (root, items) => {
       <div class="ba-slides">
         ${items.map((item, index) => `
           <article class="ba-slide ${index === 0 ? "is-active" : ""}" data-service-ba-slide aria-hidden="${index === 0 ? "false" : "true"}">
-            <div class="ba-slider-card">
-              <div class="ba-slider" data-service-ba-slider style="--position: 50%; --position-num: .5;">
-                <img class="ba-slider-img" src="${escapeServiceComponentText(item.afterSrc)}" alt="${escapeServiceComponentText(item.afterAlt)}" loading="lazy" decoding="async">
+              <div class="ba-slider-card">
+                <div class="ba-slider" data-service-ba-slider style="--position: 50%; --position-num: .5;">
+                <img class="ba-slider-img" src="${escapeServiceComponentText(item.afterSrc)}" alt="${escapeServiceComponentText(item.afterAlt)}" loading="${index === 0 ? "eager" : "lazy"}" decoding="async"${index === 0 ? ' fetchpriority="high"' : ""}>
                 <div class="ba-slider-after">
-                  <img class="ba-slider-img" src="${escapeServiceComponentText(item.beforeSrc)}" alt="${escapeServiceComponentText(item.beforeAlt)}" loading="lazy" decoding="async">
+                  <img class="ba-slider-img" src="${escapeServiceComponentText(item.beforeSrc)}" alt="${escapeServiceComponentText(item.beforeAlt)}" loading="${index === 0 ? "eager" : "lazy"}" decoding="async"${index === 0 ? ' fetchpriority="high"' : ""}>
                 </div>
                 <span class="ba-label ba-label-before">Before</span>
                 <span class="ba-label ba-label-after">After</span>
@@ -167,7 +181,25 @@ const renderServiceGallery = (root, items) => {
   `;
 };
 
+const renderServiceImageBreak = (root, item) => {
+  if (!root || !item) return;
+  root.innerHTML = `
+    <div class="hero-card">
+      <img class="hero-photo" src="${escapeServiceComponentText(item.src)}" alt="${escapeServiceComponentText(item.alt)}" loading="lazy" decoding="async">
+      <div class="hero-card-body">
+        <div>
+          <div class="mini-title">${escapeServiceComponentText(item.title)}</div>
+          <div class="mini-copy">${escapeServiceComponentText(item.description)}</div>
+        </div>
+      </div>
+    </div>
+  `;
+};
+
 document.addEventListener("DOMContentLoaded", () => {
   renderServiceBeforeAfter(document.querySelector("[data-service-before-after-root]"), carpetCleaningMedia.beforeAfter);
   renderServiceGallery(document.querySelector("[data-service-gallery-root]"), carpetCleaningMedia.gallery);
+  document.querySelectorAll("[data-service-image-break]").forEach((root) => {
+    renderServiceImageBreak(root, carpetCleaningMedia.imageBreaks[root.dataset.serviceImageBreak]);
+  });
 });
