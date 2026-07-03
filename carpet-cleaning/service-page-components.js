@@ -5,10 +5,10 @@ const carpetCleaningMedia = {
     { title: "Upholstery and Carpet Area Refresh", beforeSrc: "../assets/before-sofa.png", beforeAlt: "Before cleaning example with visible everyday soil near carpet and upholstery", afterSrc: "../assets/after-sofa.png", afterAlt: "After cleaning example showing a fresher carpet and upholstery area" }
   ],
   gallery: [
-    { src: "../assets/hero-clean-living-room.png", alt: "Clean living room carpet after a professional cleaning service", title: "Fresh Living Room", description: "A clean, comfortable look for everyday family spaces." },
-    { src: "../assets/project-living-room.png", alt: "Residential carpet cleaning example in a Bay Area living room", title: "Residential Carpet Care", description: "Carpet cleaning for rooms, hallways and high-traffic areas." },
-    { src: "../assets/project-office.png", alt: "Clean office carpet after commercial carpet cleaning", title: "Office Carpet Cleaning", description: "A cleaner impression for employees, clients and guests." },
-    { src: "../assets/project-restaurant.png", alt: "Commercial carpet cleaning example for a customer-facing space", title: "Commercial Spaces", description: "Practical cleaning for rentals, offices and shared spaces." }
+    { src: "../assets/hero-clean-living-room.png", alt: "Clean living room carpet after a professional cleaning service", caption: "Living room carpet • Mountain View" },
+    { src: "../assets/project-living-room.png", alt: "Residential carpet cleaning example in a Bay Area apartment", caption: "Apartment move-out • Sunnyvale" },
+    { src: "../assets/project-office.png", alt: "Clean office carpet after commercial carpet cleaning", caption: "Office carpet cleaning • Palo Alto" },
+    { src: "../assets/project-restaurant.png", alt: "Commercial carpet cleaning example for a customer-facing space", caption: "Shared business space • Santa Clara" }
   ],
   imageBreaks: {
     moveReady: { src: "../assets/hero-clean-living-room.png", alt: "Clean carpet in a bright living room ready for move-in or guests", title: "Move-ready rooms", description: "A clean carpet can help a home, rental or apartment feel fresher before the next chapter." },
@@ -138,21 +138,115 @@ const initializeServiceBeforeAfter = (carousel) => {
   showSlide(activeIndex);
 };
 
+const getServiceGalleryCaption = (item) => item.caption || item.title || item.description || "Project example";
+
 const renderServiceGallery = (root, items) => {
   if (!root || !items.length) return;
   root.innerHTML = `
-    <div class="project-grid">
-      ${items.map((item) => `
-        <article class="project-card">
-          <img src="${escapeServiceComponentText(item.src)}" alt="${escapeServiceComponentText(item.alt)}"${buildResponsiveImageAttrs(item)}>
-          <div class="project-info">
-            <h3>${escapeServiceComponentText(item.title)}</h3>
-            <p>${escapeServiceComponentText(item.description)}</p>
-          </div>
-        </article>
-      `).join("")}
+    <div class="service-gallery-carousel" data-service-gallery-carousel>
+      <button class="service-gallery-arrow service-gallery-arrow-prev" type="button" data-service-gallery-prev aria-label="Previous gallery image">&lsaquo;</button>
+      <div class="service-gallery-viewport" data-service-gallery-viewport>
+        <div class="service-gallery-track" data-service-gallery-track>
+          ${items.map((item, index) => `
+            <article class="service-gallery-slide ${index === 0 ? "is-active" : ""}" data-service-gallery-slide aria-hidden="${index === 0 ? "false" : "true"}">
+              <img src="${escapeServiceComponentText(item.src)}" alt="${escapeServiceComponentText(item.alt)}"${buildResponsiveImageAttrs(item)}>
+            </article>
+          `).join("")}
+        </div>
+      </div>
+      <button class="service-gallery-arrow service-gallery-arrow-next" type="button" data-service-gallery-next aria-label="Next gallery image">&rsaquo;</button>
+      <div class="service-gallery-footer">
+        <p class="service-gallery-caption" data-service-gallery-caption>${escapeServiceComponentText(getServiceGalleryCaption(items[0]))}</p>
+        <div class="service-gallery-status">
+          <div class="service-gallery-dots" data-service-gallery-dots aria-label="Gallery slides"></div>
+          <span class="service-gallery-counter" data-service-gallery-counter>1 / ${items.length}</span>
+        </div>
+      </div>
     </div>
   `;
+
+  initializeServiceGallery(root.querySelector("[data-service-gallery-carousel]"), items);
+};
+
+const initializeServiceGallery = (carousel, items) => {
+  if (!carousel || !items.length) return;
+  const viewport = carousel.querySelector("[data-service-gallery-viewport]");
+  const track = carousel.querySelector("[data-service-gallery-track]");
+  const slides = Array.from(carousel.querySelectorAll("[data-service-gallery-slide]"));
+  const prev = carousel.querySelector("[data-service-gallery-prev]");
+  const next = carousel.querySelector("[data-service-gallery-next]");
+  const caption = carousel.querySelector("[data-service-gallery-caption]");
+  const counter = carousel.querySelector("[data-service-gallery-counter]");
+  const dotsRoot = carousel.querySelector("[data-service-gallery-dots]");
+  if (!viewport || !track || !slides.length || !dotsRoot) return;
+
+  let activeIndex = 0;
+  let startX = 0;
+  let currentX = 0;
+  let isDragging = false;
+
+  const dots = slides.map((_, index) => {
+    const dot = document.createElement("button");
+    dot.type = "button";
+    dot.className = "service-gallery-dot";
+    dot.setAttribute("aria-label", `Show gallery image ${index + 1}`);
+    dot.addEventListener("click", () => showSlide(index));
+    dotsRoot.appendChild(dot);
+    return dot;
+  });
+
+  const updateTrackPosition = () => {
+    const slide = slides[activeIndex];
+    if (!slide) return;
+    const viewportCenter = viewport.clientWidth / 2;
+    const slideCenter = slide.offsetLeft + slide.offsetWidth / 2;
+    track.style.transform = `translate3d(${viewportCenter - slideCenter}px, 0, 0)`;
+  };
+
+  function showSlide(index) {
+    activeIndex = (index + slides.length) % slides.length;
+    slides.forEach((slide, slideIndex) => {
+      const isActive = slideIndex === activeIndex;
+      slide.classList.toggle("is-active", isActive);
+      slide.setAttribute("aria-hidden", String(!isActive));
+    });
+    dots.forEach((dot, dotIndex) => {
+      dot.classList.toggle("is-active", dotIndex === activeIndex);
+      dot.setAttribute("aria-current", dotIndex === activeIndex ? "true" : "false");
+    });
+    if (caption) caption.textContent = getServiceGalleryCaption(items[activeIndex]);
+    if (counter) counter.textContent = `${activeIndex + 1} / ${slides.length}`;
+    updateTrackPosition();
+  }
+
+  const endDrag = () => {
+    if (!isDragging) return;
+    isDragging = false;
+    carousel.classList.remove("is-dragging");
+    const delta = currentX - startX;
+    if (Math.abs(delta) > 42) showSlide(activeIndex + (delta < 0 ? 1 : -1));
+    else updateTrackPosition();
+  };
+
+  prev?.addEventListener("click", () => showSlide(activeIndex - 1));
+  next?.addEventListener("click", () => showSlide(activeIndex + 1));
+  viewport.addEventListener("pointerdown", (event) => {
+    isDragging = true;
+    startX = event.clientX;
+    currentX = event.clientX;
+    carousel.classList.add("is-dragging");
+    viewport.setPointerCapture?.(event.pointerId);
+  });
+  viewport.addEventListener("pointermove", (event) => {
+    if (!isDragging) return;
+    currentX = event.clientX;
+  });
+  viewport.addEventListener("pointerup", endDrag);
+  viewport.addEventListener("pointercancel", endDrag);
+  viewport.addEventListener("lostpointercapture", endDrag);
+  window.addEventListener("resize", updateTrackPosition);
+  slides.forEach((slide) => slide.querySelector("img")?.addEventListener("load", updateTrackPosition, { once: true }));
+  showSlide(activeIndex);
 };
 
 const renderServiceImageBreak = (root, item) => {
@@ -177,4 +271,3 @@ document.addEventListener("DOMContentLoaded", () => {
     renderServiceImageBreak(root, (servicePageMedia.imageBreaks || {})[root.dataset.serviceImageBreak]);
   });
 });
-

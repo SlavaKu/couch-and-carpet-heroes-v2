@@ -368,7 +368,7 @@ section { padding: 84px 0; }
 .price small { font-size: 15px; color: var(--muted); font-weight: 700; }
 .check-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
 .check-list li { display: flex; gap: 10px; align-items: flex-start; color: #475569; }
-.check-list li::before { content: "✓"; color: var(--green); font-weight: 900; flex: 0 0 auto; }
+.check-list li::before { content: "вњ“"; color: var(--green); font-weight: 900; flex: 0 0 auto; }
 .service-card .btn { width: 100%; margin-top: auto; }
 
 .additional-services {
@@ -819,6 +819,118 @@ label { font-weight: 800; color: var(--navy); font-size: 14px; }
 .project-body { padding: 22px; }
 .project-body h3 { font-size: 24px; margin-bottom: 8px; }
 .project-body p { color: var(--muted); margin: 0; }
+.service-gallery-carousel {
+  position: relative;
+  max-width: 980px;
+  margin: 0 auto;
+  display: grid;
+  gap: 18px;
+}
+.service-gallery-viewport {
+  overflow: hidden;
+  cursor: grab;
+  touch-action: pan-y;
+  user-select: none;
+}
+.service-gallery-carousel.is-dragging .service-gallery-viewport { cursor: grabbing; }
+.service-gallery-track {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+  padding: 8px 0 10px;
+  transition: transform .46s cubic-bezier(.22, .72, .18, 1);
+  will-change: transform;
+}
+.service-gallery-carousel.is-dragging .service-gallery-track { transition-duration: .18s; }
+.service-gallery-slide {
+  flex: 0 0 clamp(300px, 72vw, 760px);
+  aspect-ratio: 1.46 / .86;
+  border-radius: 26px;
+  overflow: hidden;
+  background: #e5e7eb;
+  box-shadow: 0 18px 46px rgba(15, 23, 42, .16);
+  opacity: .46;
+  transform: scale(.88);
+  transition: opacity .46s ease, transform .46s ease, box-shadow .46s ease;
+}
+.service-gallery-slide.is-active {
+  opacity: 1;
+  transform: scale(1);
+  box-shadow: 0 24px 62px rgba(15, 23, 42, .2);
+}
+.service-gallery-slide img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  object-position: center;
+  pointer-events: none;
+}
+.service-gallery-arrow {
+  position: absolute;
+  top: calc(50% - 34px);
+  z-index: 2;
+  width: 54px;
+  height: 54px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, .12);
+  background: rgba(255, 255, 255, .94);
+  color: var(--navy);
+  box-shadow: 0 14px 34px rgba(15, 23, 42, .14);
+  font-size: 38px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.service-gallery-arrow:hover { transform: translateY(-1px); }
+.service-gallery-arrow-prev { left: 18px; }
+.service-gallery-arrow-next { right: 18px; }
+.service-gallery-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  max-width: 760px;
+  width: min(100%, 760px);
+  margin: 0 auto;
+}
+.service-gallery-caption {
+  margin: 0;
+  color: var(--navy);
+  font-weight: 900;
+  font-size: 18px;
+}
+.service-gallery-status {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 0 0 auto;
+}
+.service-gallery-dots {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.service-gallery-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  border: 0;
+  background: #cbd5e1;
+  padding: 0;
+  cursor: pointer;
+}
+.service-gallery-dot.is-active {
+  width: 24px;
+  background: var(--orange);
+}
+.service-gallery-counter {
+  color: var(--muted);
+  font-weight: 800;
+  font-size: 14px;
+}
 
 .why-grid {
   display: grid;
@@ -988,7 +1100,7 @@ label { font-weight: 800; color: var(--navy); font-size: 14px; }
   box-shadow: 0 0 0 999px rgba(0,0,0,0);
 }
 .ba-divider::after {
-  content: "↔";
+  content: "в†”";
   position: absolute;
   top: 50%;
   left: 50%;
@@ -1186,5 +1298,13 @@ details p { color: var(--muted); margin-bottom: 0; }
   .ba-controls { justify-content: flex-start; }
   .ba-slider-card { padding: 14px; }
   .ba-slider { aspect-ratio: 1 / .88; }
-  .footer-logo { width: 190px; }
+  .service-gallery-carousel { max-width: 100%; gap: 14px; }
+  .service-gallery-track { gap: 14px; }
+  .service-gallery-slide { flex-basis: min(82vw, 360px); aspect-ratio: 1 / .82; border-radius: 20px; }
+  .service-gallery-arrow { top: calc(50% - 42px); width: 42px; height: 42px; font-size: 30px; }
+  .service-gallery-arrow-prev { left: 6px; }
+  .service-gallery-arrow-next { right: 6px; }
+  .service-gallery-footer { display: grid; gap: 10px; justify-items: center; text-align: center; }
+  .service-gallery-caption { font-size: 16px; }
+  .service-gallery-status { justify-content: center; }  .footer-logo { width: 190px; }
 }
