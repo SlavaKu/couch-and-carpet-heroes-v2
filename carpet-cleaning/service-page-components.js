@@ -21,7 +21,7 @@ const defaultServicePageMedia = typeof carpetCleaningMedia !== "undefined" ? car
   imageBreaks: {}
 };
 
-const servicePageMedia = window.servicePageMedia || defaultServicePageMedia;
+const servicePageMedia = window.cmsServicePageMedia || window.servicePageMedia || defaultServicePageMedia;
 const servicePageComponentConfig = {
   beforeAfterTitle: "Carpet Cleaning Before & After",
   beforeAfterDescription: "Browse temporary cleaning examples. Final project photos can be swapped in one data list later.",
@@ -264,10 +264,16 @@ const renderServiceImageBreak = (root, item) => {
   `;
 };
 
-document.addEventListener("DOMContentLoaded", () => {
-  renderServiceBeforeAfter(document.querySelector("[data-service-before-after-root]"), servicePageMedia.beforeAfter || []);
-  renderServiceGallery(document.querySelector("[data-service-gallery-root]"), servicePageMedia.gallery || []);
+const renderAllServicePageMedia = (media = servicePageMedia) => {
+  renderServiceBeforeAfter(document.querySelector("[data-service-before-after-root]"), media.beforeAfter || []);
+  renderServiceGallery(document.querySelector("[data-service-gallery-root]"), media.gallery || []);
   document.querySelectorAll("[data-service-image-break]").forEach((root) => {
-    renderServiceImageBreak(root, (servicePageMedia.imageBreaks || {})[root.dataset.serviceImageBreak]);
+    renderServiceImageBreak(root, (media.imageBreaks || {})[root.dataset.serviceImageBreak]);
   });
+};
+
+window.renderServicePageMedia = renderAllServicePageMedia;
+
+document.addEventListener("DOMContentLoaded", () => {
+  renderAllServicePageMedia(window.cmsServicePageMedia || servicePageMedia);
 });

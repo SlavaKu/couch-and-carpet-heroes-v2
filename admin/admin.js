@@ -1,185 +1,52 @@
 const SUPABASE_URL = "https://gxtrpycepqnecoyxnonl.supabase.co";
 const SUPABASE_REST_URL = "https://gxtrpycepqnecoyxnonl.supabase.co/rest/v1";
-const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_Sx1dm7TzcIntHfB6lrFctA_xoKF_EYU";
+const SUPABASE_KEY = "sb_publishable_Sx1dm7TzcIntHfB6lrFctA_xoKF_EYU";
+const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+const pageFallbacks = [
+  { page_key: "home", title: "Home", path: "../" },
+  { page_key: "carpet-cleaning", title: "Carpet Cleaning", path: "../carpet-cleaning/" },
+  { page_key: "upholstery-cleaning", title: "Upholstery Cleaning", path: "../upholstery-cleaning/" },
+  { page_key: "mattress-cleaning", title: "Mattress Cleaning", path: "../mattress-cleaning/" },
+  { page_key: "area-rug-cleaning", title: "Area Rug Cleaning", path: "../area-rug-cleaning/" }
+];
 
 const authPanel = document.querySelector("[data-auth-panel]");
 const adminPanel = document.querySelector("[data-admin-panel]");
 const loginForm = document.querySelector("[data-login-form]");
 const loginMessage = document.querySelector("[data-login-message]");
 const statusMessage = document.querySelector("[data-status-message]");
-const iconModal = document.querySelector("[data-icon-modal]");
-const iconDropzone = document.querySelector("[data-icon-dropzone]");
-const iconFileInput = document.querySelector("[data-icon-file]");
-const iconChooseButton = document.querySelector("[data-icon-choose]");
-const iconInsertButton = document.querySelector("[data-icon-insert]");
-const iconPreview = document.querySelector("[data-icon-preview]");
-const iconModalMessage = document.querySelector("[data-icon-message]");
-const beforeAfterMessage = document.querySelector("[data-ba-message]");
-const beforeAfterBeforeInput = document.querySelector("[data-ba-before-file]");
-const beforeAfterAfterInput = document.querySelector("[data-ba-after-file]");
-const beforeAfterTitleInput = document.querySelector("[data-ba-title]");
-const beforeAfterActiveInput = document.querySelector("[data-ba-active]");
-const beforeAfterAddEditor = document.querySelector("[data-ba-add-editor]");
-const beforeAfterFramingDefaults = {
-  shared_zoom: 1,
-  before_zoom: 1,
-  after_zoom: 1,
-  before_position_x: 50,
-  before_position_y: 50,
-  after_position_x: 50,
-  after_position_y: 50
+const pageSelector = document.querySelector("[data-page-selector]");
+const sectionList = document.querySelector("[data-section-list]");
+const sectionEditor = document.querySelector("[data-section-editor]");
+const saveStatus = document.querySelector("[data-save-status]");
+const seoInputs = Array.from(document.querySelectorAll("[data-seo]"));
+const schemaInput = document.querySelector("[data-schema-json]");
+
+let pages = [...pageFallbacks];
+let currentPageKey = "home";
+let currentPage = null;
+let sections = [];
+let activeSectionKey = null;
+let dirty = false;
+
+const setMessage = (node, text = "", type = "") => {
+  node.textContent = text;
+  node.className = node.className.replace(/\s?(success|error)/g, "");
+  if (type) node.classList.add(type);
 };
 
-const adminSectionOrder = [
-  "Business Settings",
-  "Homepage Content",
-  "Before / After Projects",
-  "Services Section",
-  "Contact Section",
-  "About Section",
-  "Why Choose Us",
-  "FAQs",
-  "Footer"
-];
-
-const adminCards = Array.from(adminPanel.querySelectorAll(":scope > .admin-card"));
-const adminCardsByTitle = new Map(adminCards.map((card) => [
-  card.querySelector(".card-head h2")?.textContent.trim(),
-  card
-]));
-adminSectionOrder.forEach((title) => {
-  const card = adminCardsByTitle.get(title);
-  if (card) adminPanel.appendChild(card);
-});
-
-const lists = {
-  services: document.querySelector("[data-services-list]"),
-  why: document.querySelector("[data-why-list]"),
-  about: document.querySelector("[data-about-list]"),
-  social: document.querySelector("[data-social-list]"),
-  faqs: document.querySelector("[data-faq-list]"),
-  beforeAfter: document.querySelector("[data-before-after-list]")
+const setDirty = (value = true) => {
+  dirty = value;
+  saveStatus.value = value ? "Unsaved changes" : "Saved";
 };
 
-const settingKeys = [
-  "business_phone",
-  "business_email",
-  "whatsapp_number",
-  "sms_number",
-  "business_hours",
-  "service_area_description"
-];
-
-const homepageFields = [
-  { selector: "hero.eyebrow", section_key: "hero", content_key: "eyebrow" },
-  { selector: "hero.title", section_key: "hero", content_key: "title" },
-  { selector: "hero.subtitle", section_key: "hero", content_key: "subtitle" },
-  { selector: "hero.cta_text", section_key: "hero", content_key: "cta_text" },
-  { selector: "services.title", section_key: "services", content_key: "title" },
-  { selector: "services.subtitle", section_key: "services", content_key: "subtitle" },
-  { selector: "why.title", section_key: "why", content_key: "title" },
-  { selector: "why.subtitle", section_key: "why", content_key: "subtitle" },
-  { selector: "about.title", section_key: "about", content_key: "title" },
-  { selector: "about.cta_text", section_key: "about", content_key: "cta_text" },
-  { selector: "contact.title", section_key: "contact", content_key: "title" },
-  { selector: "contact.description", section_key: "contact", content_key: "description" },
-  { selector: "footer.description", section_key: "footer", content_key: "description" },
-  { selector: "footer.copyright", section_key: "footer", content_key: "copyright" }
-];
-
-const homepageBySelector = Object.fromEntries(homepageFields.map((field) => [field.selector, field]));
-
-const fallbackSettings = {
-  business_phone: "650-519-6607",
-  business_email: "info@ccheroes-pro.com",
-  whatsapp_number: "16505196607",
-  sms_number: "16505196607",
-  business_hours: "Mon-Sun: 8AM-8PM",
-  service_area_description: "Serving Mountain View and nearby Bay Area cities"
-};
-
-const fallbackHomepage = {
-  "hero.eyebrow": "Local cleaning pros",
-  "hero.title": "Professional Sofa & Carpet Cleaning in the Bay Area",
-  "hero.subtitle": "Deep cleaning for sofas, carpets, rugs, mattresses and upholstery. Eco-friendly, safe for kids and pets, with clear estimated pricing before we start.",
-  "hero.cta_text": "Get Instant Estimate",
-  "services.title": "Cleaning Services",
-  "services.subtitle": "Simple service cards, clear starting prices and an instant estimate builder for residential cleaning.",
-  "why.title": "Why Choose Us",
-  "why.subtitle": "Trust blocks are practical: what matters to the customer before booking.",
-  "about.title": "About Couch and Carpet Heroes",
-  "about.cta_text": "Get Estimate",
-  "contact.title": "Book Your Cleaning in 2 Minutes",
-  "contact.description": "Send your service type, city and photos. We reply with a clear estimate and available time windows. Final price is confirmed on-site before work starts.",
-  "footer.description": "Professional sofa, carpet, rug, mattress and upholstery cleaning for homes and businesses.",
-  "footer.copyright": "© 2026 Couch and Carpet Heroes. All rights reserved."
-};
-
-const fallbackServices = [
-  { id: "fallback-carpet", service_key: "carpet_cleaning", title: "Carpet Cleaning", description: "Hot water extraction, fast drying, and odor treatment available.", button_text: "Estimate Carpet Cleaning", sort_order: 1, is_active: true },
-  { id: "fallback-sofa", service_key: "sofa_cleaning", title: "Sofa Cleaning", description: "Deep fabric cleaning, stain treatment, and optional fabric protection.", button_text: "Estimate Sofa Cleaning", sort_order: 2, is_active: true },
-  { id: "fallback-mattress", service_key: "mattress_cleaning", title: "Mattress Cleaning", description: "Deep sanitation, spot treatment, and odor removal available.", button_text: "Estimate Mattress Cleaning", sort_order: 3, is_active: true }
-];
-
-const fallbackWhyFeatures = [
-  { id: "fallback-inspection", feature_key: "inspection", title: "Careful Inspection", description: "We check fabric type, stains and possible risks before cleaning.", icon_text: "✓", sort_order: 1, is_active: true },
-  { id: "fallback-eco", feature_key: "eco_friendly", title: "Eco-Friendly Products", description: "Safe cleaning products for homes with kids and pets.", icon_text: "♻", sort_order: 2, is_active: true },
-  { id: "fallback-scheduling", feature_key: "fast_scheduling", title: "Fast Scheduling", description: "Easy booking by text, photos and clear time windows.", icon_text: "⏱", sort_order: 3, is_active: true },
-  { id: "fallback-pricing", feature_key: "clear_pricing", title: "Clear Pricing", description: "Estimate before arrival, final price confirmed on-site.", icon_text: "$", sort_order: 4, is_active: true },
-  { id: "fallback-local", feature_key: "local_service", title: "Local Service", description: "Serving Mountain View and nearby Bay Area cities.", icon_text: "★", sort_order: 5, is_active: true },
-  { id: "fallback-text", feature_key: "text_friendly", title: "Text Friendly", description: "Send photos by text for a faster and more accurate quote.", icon_text: "☏", sort_order: 6, is_active: true }
-];
-
-const fallbackAboutParagraphs = [
-  { id: "fallback-about-1", paragraph_text: "Couch and Carpet Heroes helps Bay Area homes and businesses keep sofas, carpets, rugs, mattresses and upholstery clean, fresh and ready to use.", sort_order: 1, is_active: true },
-  { id: "fallback-about-2", paragraph_text: "We focus on clear communication, careful inspection, eco-friendly products and practical estimates before work starts.", sort_order: 2, is_active: true }
-];
-
-const fallbackFaqs = [
-  { id: "fallback-faq-1", question: "Do you need photos before giving a price?", answer: "Photos help us give a more accurate estimate, especially for sofas, rugs, stains and odor issues.", sort_order: 1, is_active: true },
-  { id: "fallback-faq-2", question: "Are your products safe for kids and pets?", answer: "We use eco-friendly products and choose the cleaning method based on fabric type and soil level.", sort_order: 2, is_active: true },
-  { id: "fallback-faq-3", question: "Can all stains be removed?", answer: "Many stains improve or disappear, but some old or chemical stains may remain. We explain the risk before starting.", sort_order: 3, is_active: true },
-  { id: "fallback-faq-4", question: "What areas do you serve?", answer: "Mountain View and nearby Bay Area cities, including Palo Alto, Sunnyvale, Los Altos, Cupertino and San Jose areas.", sort_order: 4, is_active: true }
-];
-
-let services = [];
-let whyFeatures = [];
-let aboutParagraphs = [];
-let socialLinks = [];
-let faqs = [];
-let beforeAfterProjects = [];
-let activeIconFeatureId = "";
-let selectedIconFile = null;
-let selectedIconPreviewUrl = "";
-let activeFramingDragCard = null;
-let activeFramingRange = null;
-let activeFramingPointerId = null;
-let isAdminLoading = false;
-let contentLoaded = false;
-let whyFeaturesLoadedFromSupabase = false;
-let adminLoadPromise = null;
-
-const setMessage = (element, message, type = "") => {
-  if (!element) return;
-  element.textContent = message;
-  element.classList.toggle("success", type === "success");
-  element.classList.toggle("error", type === "error");
-};
-
-const showAdmin = (isLoggedIn) => {
-  authPanel.hidden = isLoggedIn;
-  adminPanel.hidden = !isLoggedIn;
-};
-
-const resetAdminState = () => {
-  isAdminLoading = false;
-  contentLoaded = false;
-  whyFeaturesLoadedFromSupabase = false;
-  adminLoadPromise = null;
-  setMessage(statusMessage, "");
-  setMessage(loginMessage, "");
+const cmsRequest = async (table, query = "") => {
+  const response = await fetch(`${SUPABASE_REST_URL}/${table}${query}`, {
+    headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` }
+  });
+  if (!response.ok) throw new Error(`Supabase ${table} request failed: ${response.status}`);
+  return response.json();
 };
 
 const escapeHtml = (value = "") => String(value)
@@ -188,1569 +55,623 @@ const escapeHtml = (value = "") => String(value)
   .replaceAll(">", "&gt;")
   .replaceAll('"', "&quot;");
 
-const adminCmsRequest = async (table, query = "") => {
-  const response = await fetch(`${SUPABASE_REST_URL}/${table}${query}`, {
-    headers: {
-      apikey: SUPABASE_PUBLISHABLE_KEY,
-      Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`
-    }
-  });
-  if (!response.ok) throw new Error(`CMS ${table} request failed: ${response.status}`);
-  return response.json();
+const slug = (value, fallback) => {
+  const text = String(value || "").toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  return text || fallback;
 };
 
-const getSettingValue = (key) => document.querySelector(`[data-setting="${key}"]`)?.value.trim() || "";
-const getHomepageValue = (selector) => document.querySelector(`[data-homepage="${selector}"]`)?.value.trim() || "";
-
-const sortByOrder = (items) => {
-  items.sort((a, b) => (Number(a.sort_order) || 0) - (Number(b.sort_order) || 0));
+const inferSectionType = (section) => {
+  if (section.classList.contains("hero")) return "hero";
+  if (section.classList.contains("gallery") || section.querySelector("[data-service-gallery-root]")) return "gallery";
+  if (section.classList.contains("booking-band")) return "final_cta";
+  if (section.querySelector(".faq-grid")) return "faq";
+  if (section.querySelector("[data-service-before-after-root]")) return "before_after";
+  if (section.querySelector("[data-service-image-break]")) return "image_break";
+  const text = section.textContent.toLowerCase();
+  if (text.includes("related services")) return "related_services";
+  if (text.includes("areas we serve") || text.includes("service area")) return "service_areas";
+  if (text.includes("written by")) return "author";
+  return "content";
 };
 
-const setAllSettingInputs = (key, value) => {
-  document.querySelectorAll(`[data-setting="${key}"]`).forEach((input) => {
-    input.value = value || "";
-  });
+const textNodes = (root) => Array.from(root.querySelectorAll("h1,h2,h3,h4,p,li,summary,a.btn,a:not(.brand):not(.phone-link),button.btn,.eyebrow,.lead,.footer-bottom,.top-note,.top-actions span,.breadcrumbs span[aria-current='page']"))
+  .filter((node) => !node.closest("script,style,.ba-slider,.service-gallery-dots,.ba-dots,.calculator-layout,.estimate-modal"));
+
+const linkNodes = (root) => Array.from(root.querySelectorAll("a[href]"))
+  .filter((node) => !node.closest(".calculator-layout,.estimate-modal"));
+
+const imageNodes = (root) => Array.from(root.querySelectorAll("img"))
+  .filter((node) => !node.closest(".calculator-layout,.estimate-modal"));
+
+const getMeta = (doc, selector, attr = "content") => doc.querySelector(selector)?.getAttribute(attr) || "";
+
+const parseSchema = (doc) => {
+  try {
+    return JSON.parse(doc.querySelector("script[type='application/ld+json']")?.textContent || "{}");
+  } catch {
+    return {};
+  }
 };
 
-async function loadSettings() {
-  settingKeys.forEach((key) => setAllSettingInputs(key, fallbackSettings[key] || ""));
+const extractFaqs = (section) => Array.from(section.querySelectorAll(".faq-grid details")).map((item) => ({
+  question: item.querySelector("summary")?.textContent.trim() || "",
+  answer: item.querySelector("p")?.textContent.trim() || ""
+})).filter((faq) => faq.question || faq.answer);
 
-  const data = await adminCmsRequest("site_settings", "?select=setting_key,setting_value");
-
-  const values = Object.fromEntries((data || []).map((row) => [row.setting_key, row.setting_value]));
-  settingKeys.forEach((key) => setAllSettingInputs(key, values[key] || fallbackSettings[key] || ""));
-}
-
-async function saveSettings(keys = settingKeys) {
-  const rows = [...new Set(keys)].map((key) => ({
-    setting_key: key,
-    setting_value: getSettingValue(key),
-    label: key.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase())
+const extractMedia = (section) => {
+  const images = imageNodes(section).map((img) => ({
+    src: img.getAttribute("src") || "",
+    alt: img.getAttribute("alt") || "",
+    srcset: img.getAttribute("srcset") || ""
   }));
+  return images.length ? { images } : {};
+};
 
-  const { error } = await client
-    .from("site_settings")
-    .upsert(rows, { onConflict: "setting_key" });
+const extractServiceMedia = (html) => {
+  const match = html.match(/window\.servicePageMedia\s*=\s*({[\s\S]*?});\s*<\/script>/);
+  if (!match) return {};
+  try {
+    return Function(`"use strict"; return (${match[1]});`)();
+  } catch {
+    return {};
+  }
+};
 
-  if (error) throw error;
-}
-
-async function loadHomepageContent() {
-  homepageFields.forEach((field) => {
-    const input = document.querySelector(`[data-homepage="${field.selector}"]`);
-    if (input) input.value = fallbackHomepage[field.selector] || "";
-  });
-
-  const data = await adminCmsRequest("homepage_content", "?select=section_key,content_key,content_value");
-
-  const values = Object.fromEntries((data || []).map((row) => [`${row.section_key}.${row.content_key}`, row.content_value]));
-  homepageFields.forEach((field) => {
-    const input = document.querySelector(`[data-homepage="${field.selector}"]`);
-    if (input) input.value = values[field.selector] || fallbackHomepage[field.selector] || "";
-  });
-}
-
-async function saveHomepageContent(selectors = homepageFields.map((field) => field.selector)) {
-  const rows = selectors.map((selector) => {
-    const field = homepageBySelector[selector];
+const extractPageModel = async (page) => {
+  const fetchPath = page.path.startsWith("../") ? page.path : `..${page.path === "/" ? "/" : page.path}`;
+  const response = await fetch(fetchPath);
+  if (!response.ok) throw new Error(`Could not fetch ${page.title}`);
+  const html = await response.text();
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const serviceMedia = extractServiceMedia(html);
+  const mainSections = Array.from(doc.querySelectorAll("main > section"));
+  const extractedSections = mainSections.map((section, index) => {
+    const label = section.querySelector("h1,h2,h3")?.textContent.trim() || `Section ${index + 1}`;
+    const fields = {};
+    textNodes(section).forEach((node, fieldIndex) => {
+      fields[`text.${fieldIndex}`] = {
+        label: `${node.tagName.toLowerCase()} ${fieldIndex + 1}`,
+        value: node.textContent.trim()
+      };
+    });
+    linkNodes(section).forEach((node, linkIndex) => {
+      fields[`link.${linkIndex}.href`] = {
+        label: `Link ${linkIndex + 1} href`,
+        value: node.getAttribute("href") || ""
+      };
+    });
+    imageNodes(section).forEach((node, imageIndex) => {
+      fields[`image.${imageIndex}.src`] = { label: `Image ${imageIndex + 1} src`, value: node.getAttribute("src") || "" };
+      fields[`image.${imageIndex}.alt`] = { label: `Image ${imageIndex + 1} alt`, value: node.getAttribute("alt") || "" };
+    });
+    const type = inferSectionType(section);
+    const media = extractMedia(section);
+    if (type === "before_after" && serviceMedia.beforeAfter) media.beforeAfter = serviceMedia.beforeAfter;
+    if (type === "gallery" && serviceMedia.gallery) media.gallery = serviceMedia.gallery;
+    if (section.querySelector("[data-service-image-break]") && serviceMedia.imageBreaks) media.imageBreaks = serviceMedia.imageBreaks;
     return {
-      section_key: field.section_key,
-      content_key: field.content_key,
-      content_value: getHomepageValue(selector)
+      section_key: `${String(index + 1).padStart(2, "0")}-${slug(label, "section")}`,
+      section_type: type,
+      label,
+      sort_order: (index + 1) * 10,
+      is_visible: true,
+      content: {
+        fields,
+        faqs: extractFaqs(section),
+        media
+      }
     };
   });
 
-  const { error } = await client
-    .from("homepage_content")
-    .upsert(rows, { onConflict: "section_key,content_key" });
-
-  if (error) throw error;
-}
-
-async function loadServices() {
-  let data;
-  try {
-    data = await adminCmsRequest("services", "?select=id,service_key,title,description,button_text,sort_order,is_active&order=sort_order.asc");
-  } catch (error) {
-    services = fallbackServices.map((service) => ({ ...service }));
-    renderServices();
-    throw error;
-  }
-  services = data?.length ? data : fallbackServices.map((service) => ({ ...service }));
-  renderServices();
-}
-
-function renderServices() {
-  sortByOrder(services);
-  lists.services.innerHTML = services.map((service, index) => `
-    <article class="faq-editor" data-service-id="${service.id}">
-      <div class="faq-row">
-        <strong>Service ${index + 1}</strong>
-        <label class="toggle-label">
-          <input type="checkbox" data-service-field="is_active" ${service.is_active ? "checked" : ""}>
-          Active
-        </label>
-      </div>
-      <label>
-        Title
-        <input type="text" data-service-field="title" value="${escapeHtml(service.title || "")}">
-      </label>
-      <label>
-        Description
-        <textarea data-service-field="description" rows="3">${escapeHtml(service.description || "")}</textarea>
-      </label>
-      <label>
-        Button text
-        <input type="text" data-service-field="button_text" value="${escapeHtml(service.button_text || "")}">
-      </label>
-      <label>
-        Display order
-        <input type="number" data-service-field="sort_order" value="${Number(service.sort_order || index + 1)}">
-      </label>
-    </article>
-  `).join("");
-}
-
-function syncServices() {
-  document.querySelectorAll("[data-service-id]").forEach((card) => {
-    const item = services.find((service) => service.id === card.dataset.serviceId);
-    if (!item) return;
-    item.title = card.querySelector('[data-service-field="title"]')?.value.trim() || "";
-    item.description = card.querySelector('[data-service-field="description"]')?.value.trim() || "";
-    item.button_text = card.querySelector('[data-service-field="button_text"]')?.value.trim() || "";
-    item.sort_order = Number(card.querySelector('[data-service-field="sort_order"]')?.value || 0);
-    item.is_active = Boolean(card.querySelector('[data-service-field="is_active"]')?.checked);
-  });
-}
-
-async function saveServices() {
-  syncServices();
-  for (const service of services) {
-    const { error } = await client.from("services").update({
-      title: service.title,
-      description: service.description,
-      button_text: service.button_text,
-      sort_order: service.sort_order,
-      is_active: service.is_active
-    }).eq("id", service.id);
-    if (error) throw error;
-  }
-  await loadServices();
-}
-
-async function loadWhyFeatures() {
-  whyFeaturesLoadedFromSupabase = false;
-  let data;
-  try {
-    data = await adminCmsRequest("why_features", "?select=id,feature_key,title,description,icon_text,icon_url,sort_order,is_active&order=sort_order.asc");
-  } catch (error) {
-    whyFeatures = fallbackWhyFeatures.map((feature) => ({ ...feature }));
-    renderWhyFeatures();
-    throw error;
-  }
-  whyFeatures = data?.length ? data : fallbackWhyFeatures.map((feature) => ({ ...feature }));
-  whyFeaturesLoadedFromSupabase = Boolean(data?.length);
-  renderWhyFeatures();
-}
-
-function renderWhyFeatures() {
-  sortByOrder(whyFeatures);
-  lists.why.innerHTML = whyFeatures.map((feature, index) => `
-    <article class="faq-editor" data-why-id="${feature.id}">
-      <div class="faq-row">
-        <strong>Feature ${index + 1}</strong>
-        <label class="toggle-label">
-          <input type="checkbox" data-why-field="is_active" ${feature.is_active ? "checked" : ""}>
-          Active
-        </label>
-      </div>
-      <label>
-        Icon / Emoji
-        <input type="text" data-why-field="icon_text" value="${escapeHtml(feature.icon_text || "")}">
-      </label>
-      <input type="hidden" data-why-field="icon_url" value="${escapeHtml(feature.icon_url || "")}">
-      <div class="icon-current" data-icon-current>
-        ${feature.icon_url ? `<img src="${escapeHtml(feature.icon_url)}" alt="">` : `<span>${escapeHtml(feature.icon_text || "")}</span>`}
-      </div>
-      ${feature.icon_url ? `<button class="btn btn-secondary icon-remove-btn" type="button" data-remove-icon="${feature.id}">Remove uploaded icon</button>` : ""}
-      <button class="btn btn-secondary" type="button" data-add-icon="${feature.id}">Add icon</button>
-      <label>
-        Title
-        <input type="text" data-why-field="title" value="${escapeHtml(feature.title || "")}">
-      </label>
-      <label>
-        Description
-        <textarea data-why-field="description" rows="3">${escapeHtml(feature.description || "")}</textarea>
-      </label>
-      <label>
-        Display order
-        <input type="number" data-why-field="sort_order" value="${Number(feature.sort_order || index + 1)}">
-      </label>
-    </article>
-  `).join("");
-}
-
-function syncWhyFeatures() {
-  document.querySelectorAll("[data-why-id]").forEach((card) => {
-    const item = whyFeatures.find((feature) => feature.id === card.dataset.whyId);
-    if (!item) return;
-    item.icon_text = card.querySelector('[data-why-field="icon_text"]')?.value.trim() || "";
-    item.icon_url = card.querySelector('[data-why-field="icon_url"]')?.value.trim() || "";
-    item.title = card.querySelector('[data-why-field="title"]')?.value.trim() || "";
-    item.description = card.querySelector('[data-why-field="description"]')?.value.trim() || "";
-    item.sort_order = Number(card.querySelector('[data-why-field="sort_order"]')?.value || 0);
-    item.is_active = Boolean(card.querySelector('[data-why-field="is_active"]')?.checked);
-  });
-}
-
-async function saveWhyFeatures() {
-  syncWhyFeatures();
-  for (const feature of whyFeatures) {
-    const { error } = await client.from("why_features").update({
-      icon_text: feature.icon_text,
-      icon_url: feature.icon_url || null,
-      title: feature.title,
-      description: feature.description,
-      sort_order: feature.sort_order,
-      is_active: feature.is_active
-    }).eq("id", feature.id);
-    if (error) throw error;
-  }
-  await loadWhyFeatures();
-}
-
-async function loadAboutParagraphs() {
-  let data;
-  try {
-    data = await adminCmsRequest("about_paragraphs", "?select=id,paragraph_text,sort_order,is_active&order=sort_order.asc");
-  } catch (error) {
-    aboutParagraphs = fallbackAboutParagraphs.map((paragraph) => ({ ...paragraph }));
-    renderAboutParagraphs();
-    throw error;
-  }
-  aboutParagraphs = data?.length ? data : fallbackAboutParagraphs.map((paragraph) => ({ ...paragraph }));
-  renderAboutParagraphs();
-}
-
-function renderAboutParagraphs() {
-  sortByOrder(aboutParagraphs);
-  lists.about.innerHTML = aboutParagraphs.map((paragraph, index) => `
-    <article class="faq-editor" data-about-id="${paragraph.id}">
-      <div class="faq-row">
-        <strong>Paragraph ${index + 1}</strong>
-        <label class="toggle-label">
-          <input type="checkbox" data-about-field="is_active" ${paragraph.is_active ? "checked" : ""}>
-          Active
-        </label>
-      </div>
-      <label>
-        Paragraph text
-        <textarea data-about-field="paragraph_text" rows="4">${escapeHtml(paragraph.paragraph_text || "")}</textarea>
-      </label>
-      <div class="faq-row">
-        <label>
-          Sort order
-          <input type="number" data-about-field="sort_order" value="${Number(paragraph.sort_order || index + 1)}">
-        </label>
-        <button class="btn delete-btn" type="button" data-delete-about="${paragraph.id}">Delete Paragraph</button>
-      </div>
-    </article>
-  `).join("");
-}
-
-function syncAboutParagraphs() {
-  document.querySelectorAll("[data-about-id]").forEach((card) => {
-    const item = aboutParagraphs.find((paragraph) => paragraph.id === card.dataset.aboutId);
-    if (!item) return;
-    item.paragraph_text = card.querySelector('[data-about-field="paragraph_text"]')?.value.trim() || "";
-    item.sort_order = Number(card.querySelector('[data-about-field="sort_order"]')?.value || 0);
-    item.is_active = Boolean(card.querySelector('[data-about-field="is_active"]')?.checked);
-  });
-}
-
-async function saveAboutParagraphs() {
-  syncAboutParagraphs();
-  for (const paragraph of aboutParagraphs) {
-    const payload = {
-      paragraph_text: paragraph.paragraph_text,
-      sort_order: Number(paragraph.sort_order || 0),
-      is_active: Boolean(paragraph.is_active)
-    };
-    if (paragraph.id.startsWith("new-")) {
-      const { error } = await client.from("about_paragraphs").insert(payload);
-      if (error) throw error;
-    } else {
-      const { error } = await client.from("about_paragraphs").update(payload).eq("id", paragraph.id);
-      if (error) throw error;
-    }
-  }
-  await loadAboutParagraphs();
-}
-
-async function deleteAboutParagraph(id) {
-  if (id.startsWith("new-")) {
-    aboutParagraphs = aboutParagraphs.filter((paragraph) => paragraph.id !== id);
-    renderAboutParagraphs();
-    return;
-  }
-  const { error } = await client.from("about_paragraphs").delete().eq("id", id);
-  if (error) throw error;
-  aboutParagraphs = aboutParagraphs.filter((paragraph) => paragraph.id !== id);
-  renderAboutParagraphs();
-}
-
-async function loadSocialLinks() {
-  let data;
-  try {
-    data = await adminCmsRequest("social_links", "?select=id,platform,url,sort_order,is_active&order=sort_order.asc");
-  } catch (error) {
-    socialLinks = [];
-    renderSocialLinks();
-    throw error;
-  }
-  socialLinks = data || [];
-  renderSocialLinks();
-}
-
-function renderSocialLinks() {
-  sortByOrder(socialLinks);
-  lists.social.innerHTML = socialLinks.map((link, index) => `
-    <article class="faq-editor" data-social-id="${link.id}">
-      <div class="faq-row">
-        <strong>Social Link ${index + 1}</strong>
-        <label class="toggle-label">
-          <input type="checkbox" data-social-field="is_active" ${link.is_active ? "checked" : ""}>
-          Active
-        </label>
-      </div>
-      <label>
-        Platform
-        <input type="text" data-social-field="platform" value="${escapeHtml(link.platform || "")}">
-      </label>
-      <label>
-        URL
-        <input type="url" data-social-field="url" value="${escapeHtml(link.url || "")}">
-      </label>
-      <div class="faq-row">
-        <label>
-          Sort order
-          <input type="number" data-social-field="sort_order" value="${Number(link.sort_order || index + 1)}">
-        </label>
-        <button class="btn delete-btn" type="button" data-delete-social="${link.id}">Delete Link</button>
-      </div>
-    </article>
-  `).join("");
-}
-
-function syncSocialLinks() {
-  document.querySelectorAll("[data-social-id]").forEach((card) => {
-    const item = socialLinks.find((link) => link.id === card.dataset.socialId);
-    if (!item) return;
-    item.platform = card.querySelector('[data-social-field="platform"]')?.value.trim() || "";
-    item.url = card.querySelector('[data-social-field="url"]')?.value.trim() || "";
-    item.sort_order = Number(card.querySelector('[data-social-field="sort_order"]')?.value || 0);
-    item.is_active = Boolean(card.querySelector('[data-social-field="is_active"]')?.checked);
-  });
-}
-
-async function saveSocialLinks() {
-  syncSocialLinks();
-  for (const link of socialLinks) {
-    const payload = {
-      platform: link.platform,
-      url: link.url,
-      sort_order: Number(link.sort_order || 0),
-      is_active: Boolean(link.is_active)
-    };
-    if (link.id.startsWith("new-")) {
-      const { error } = await client.from("social_links").insert(payload);
-      if (error) throw error;
-    } else {
-      const { error } = await client.from("social_links").update(payload).eq("id", link.id);
-      if (error) throw error;
-    }
-  }
-  await loadSocialLinks();
-}
-
-async function deleteSocialLink(id) {
-  if (id.startsWith("new-")) {
-    socialLinks = socialLinks.filter((link) => link.id !== id);
-    renderSocialLinks();
-    return;
-  }
-  const { error } = await client.from("social_links").delete().eq("id", id);
-  if (error) throw error;
-  socialLinks = socialLinks.filter((link) => link.id !== id);
-  renderSocialLinks();
-}
-
-async function loadBeforeAfterProjects() {
-  beforeAfterProjects = await adminCmsRequest("before_after_projects", "?select=id,before_image_url,after_image_url,title,sort_order,is_active,created_at,shared_zoom,before_zoom,after_zoom,before_position_x,before_position_y,after_position_x,after_position_y&order=sort_order.asc,created_at.asc");
-  renderBeforeAfterProjects();
-}
-
-const framingNumber = (value, fallback, min, max) => {
-  const number = Number(value);
-  if (!Number.isFinite(number)) return fallback;
-  return Math.min(max, Math.max(min, number));
-};
-
-const framingPercent = (value) => framingNumber(value, 50, 0, 100);
-const framingZoom = (value) => framingNumber(value, 1, 1, 3);
-const projectFraming = (project = {}) => ({
-  shared_zoom: framingZoom(project.shared_zoom ?? beforeAfterFramingDefaults.shared_zoom),
-  before_zoom: framingZoom(project.before_zoom ?? beforeAfterFramingDefaults.before_zoom),
-  after_zoom: framingZoom(project.after_zoom ?? beforeAfterFramingDefaults.after_zoom),
-  before_position_x: framingPercent(project.before_position_x ?? beforeAfterFramingDefaults.before_position_x),
-  before_position_y: framingPercent(project.before_position_y ?? beforeAfterFramingDefaults.before_position_y),
-  after_position_x: framingPercent(project.after_position_x ?? beforeAfterFramingDefaults.after_position_x),
-  after_position_y: framingPercent(project.after_position_y ?? beforeAfterFramingDefaults.after_position_y)
-});
-
-const imageFramingStyle = (framing, phase) => {
-  const sharedZoom = framingZoom(framing.shared_zoom);
-  const zoom = framingZoom(framing[`${phase}_zoom`]) * sharedZoom;
-  const x = framingPercent(framing[`${phase}_position_x`]);
-  const y = framingPercent(framing[`${phase}_position_y`]);
-  return `object-position: ${x}% ${y}%; transform: scale(${zoom}); transform-origin: ${x}% ${y}%;`;
-};
-
-const previewImage = (src, phase, framing) => `
-  <img class="ba-live-img" ${src ? `src="${escapeHtml(src)}"` : ""} alt="" draggable="false" data-ba-framing-preview="${phase}" style="${imageFramingStyle(framing, phase)}" ${src ? "" : "hidden"}>
-`;
-
-const framingRange = (attribute, field, label, value, min = 0, max = 100, step = 1) => `
-  <label>
-    <span>${label}</span>
-    <input type="range" ${attribute}="${field}" min="${min}" max="${max}" step="${step}" value="${value}" draggable="false">
-  </label>
-`;
-
-const beforeAfterFramingPanel = (attribute, phase, label, src, framing) => `
-  <div class="ba-framing-panel" data-ba-framing-panel="${phase}">
-    <div class="ba-live-preview" data-ba-framing-live-preview>
-      <div class="ba-live-frame" aria-label="${label} image framing preview">
-        ${previewImage(src, phase, framing)}
-        <div class="ba-live-placeholder" data-ba-framing-placeholder="${phase}" ${src ? "hidden" : ""}>Choose ${label} image</div>
-        <span class="ba-live-label">${label}</span>
-      </div>
-    </div>
-    <fieldset>
-      <legend>${label} framing</legend>
-      ${framingRange(attribute, `${phase}_zoom`, "Zoom", framing[`${phase}_zoom`], 1, 3, 0.05)}
-      ${framingRange(attribute, `${phase}_position_x`, "Horizontal position", framing[`${phase}_position_x`])}
-      ${framingRange(attribute, `${phase}_position_y`, "Vertical position", framing[`${phase}_position_y`])}
-    </fieldset>
-  </div>
-`;
-
-const beforeAfterFramingEditor = ({ beforeSrc = "", afterSrc = "", framing = beforeAfterFramingDefaults, attribute = "data-ba-project-field" } = {}) => {
-  const values = projectFraming(framing);
-  return `
-    <div class="ba-framing-editor" data-ba-framing-editor>
-      <div class="ba-framing-overall">
-        ${framingRange(attribute, "shared_zoom", "Overall zoom", values.shared_zoom, 1, 3, 0.05)}
-      </div>
-      <div class="ba-framing-grid" aria-label="Before and after image framing controls">
-        ${beforeAfterFramingPanel(attribute, "before", "Before", beforeSrc, values)}
-        ${beforeAfterFramingPanel(attribute, "after", "After", afterSrc, values)}
-      </div>
-    </div>
-  `;
-};
-
-function renderBeforeAfterProjects() {
-  if (!lists.beforeAfter) return;
-  lists.beforeAfter.innerHTML = beforeAfterProjects.map((project, index) => {
-    const framing = projectFraming(project);
-    return `
-    <article class="faq-editor ba-project-card" data-ba-project-id="${project.id}" draggable="true">
-      <div class="faq-row ba-project-summary">
-        <span class="ba-drag-handle" aria-label="Drag to reorder">Drag</span>
-        <strong>${index + 1}</strong>
-        <div class="ba-admin-preview">
-          <img src="${escapeHtml(project.before_image_url || "")}" alt="">
-          <img src="${escapeHtml(project.after_image_url || "")}" alt="">
-        </div>
-        <span>${escapeHtml(project.title || "")}</span>
-        <span>${project.is_active ? "Active" : "Inactive"}</span>
-        <div class="card-actions">
-          <button class="btn btn-secondary" type="button" data-edit-before-after="${project.id}">Edit</button>
-          <button class="btn delete-btn" type="button" data-delete-before-after="${project.id}">Delete</button>
-        </div>
-      </div>
-      <div class="ba-project-edit" data-ba-project-edit hidden>
-      ${beforeAfterFramingEditor({
-        beforeSrc: project.before_image_url,
-        afterSrc: project.after_image_url,
-        framing,
-        attribute: "data-ba-project-field"
-      })}
-      <label>
-        Title
-        <input type="text" data-ba-project-field="title" value="${escapeHtml(project.title || "")}">
-      </label>
-      <label>
-        Sort order
-        <input type="number" data-ba-project-field="sort_order" value="${Number(project.sort_order || index + 1)}">
-      </label>
-      <label class="toggle-label">
-        <input type="checkbox" data-ba-project-field="is_active" ${project.is_active ? "checked" : ""}>
-        Active
-      </label>
-      <label>
-        Replace Before image
-        <input type="file" data-ba-project-field="before_file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
-      </label>
-      <label>
-        Replace After image
-        <input type="file" data-ba-project-field="after_file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
-      </label>
-      <button class="btn btn-primary" type="button" data-save-before-after-project="${project.id}">Save Changes</button>
-      </div>
-    </article>
-  `;
-  }).join("");
-}
-
-function syncBeforeAfterProjects() {
-  document.querySelectorAll("[data-ba-project-id]").forEach((card) => {
-    const item = beforeAfterProjects.find((project) => project.id === card.dataset.baProjectId);
-    if (!item) return;
-    item.title = card.querySelector('[data-ba-project-field="title"]')?.value.trim() || "";
-    item.sort_order = Number(card.querySelector('[data-ba-project-field="sort_order"]')?.value || 0);
-    item.is_active = Boolean(card.querySelector('[data-ba-project-field="is_active"]')?.checked);
-    Object.keys(beforeAfterFramingDefaults).forEach((field) => {
-      const input = card.querySelector(`[data-ba-project-field="${field}"]`);
-      if (input) item[field] = field.includes("zoom")
-        ? framingZoom(input.value)
-        : framingPercent(input.value);
+  const footer = doc.querySelector("footer");
+  if (footer) {
+    const fields = {};
+    textNodes(footer).forEach((node, index) => {
+      fields[`text.${index}`] = { label: `${node.tagName.toLowerCase()} ${index + 1}`, value: node.textContent.trim() };
     });
-  });
-}
-
-const readFramingFromCard = (card) => Object.fromEntries(
-  Object.keys(beforeAfterFramingDefaults).map((field) => {
-    const input = card?.querySelector(`[data-ba-project-field="${field}"]`);
-    const value = input?.value ?? beforeAfterFramingDefaults[field];
-    return [field, field.includes("zoom") ? framingZoom(value) : framingPercent(value)];
-  })
-);
-
-const readFramingFromEditor = (editor) => Object.fromEntries(
-  Object.keys(beforeAfterFramingDefaults).map((field) => {
-    const input = editor?.querySelector(`[data-ba-project-field="${field}"], [data-ba-add-field="${field}"]`);
-    const value = input?.value ?? beforeAfterFramingDefaults[field];
-    return [field, field.includes("zoom") ? framingZoom(value) : framingPercent(value)];
-  })
-);
-
-const updateBeforeAfterFramingPreview = (editor) => {
-  if (!editor) return;
-  const framing = readFramingFromEditor(editor);
-  editor.querySelectorAll("[data-ba-framing-preview]").forEach((image) => {
-    image.setAttribute("style", imageFramingStyle(framing, image.dataset.baFramingPreview));
-  });
-};
-
-const updateBeforeAfterPreviewPlaceholder = (editor) => {
-  if (!editor) return;
-  editor.querySelectorAll("[data-ba-framing-placeholder]").forEach((placeholder) => {
-    const phase = placeholder.dataset.baFramingPlaceholder;
-    const image = editor.querySelector(`[data-ba-framing-preview="${phase}"]`);
-    placeholder.hidden = Boolean(image?.src && !image.hidden);
-  });
-};
-
-const setFramingPreviewImage = (editor, phase, src = "") => {
-  const image = editor?.querySelector(`[data-ba-framing-preview="${phase}"]`);
-  if (!image) return;
-  image.src = src;
-  image.hidden = !src;
-  updateBeforeAfterFramingPreview(editor);
-  updateBeforeAfterPreviewPlaceholder(editor);
-};
-
-const addBeforeAfterPreviewUrls = { before: "", after: "" };
-
-const setAddBeforeAfterPreviewFile = (phase, file) => {
-  if (!beforeAfterAddEditor) return;
-  if (addBeforeAfterPreviewUrls[phase]) URL.revokeObjectURL(addBeforeAfterPreviewUrls[phase]);
-  addBeforeAfterPreviewUrls[phase] = "";
-
-  if (!file) {
-    setFramingPreviewImage(beforeAfterAddEditor, phase, "");
-    return;
-  }
-
-  if (!isAllowedProjectImage(file)) {
-    setMessage(beforeAfterMessage, "Please choose a JPG, PNG, or WEBP image.", "error");
-    setFramingPreviewImage(beforeAfterAddEditor, phase, "");
-    return;
-  }
-
-  addBeforeAfterPreviewUrls[phase] = URL.createObjectURL(file);
-  setFramingPreviewImage(beforeAfterAddEditor, phase, addBeforeAfterPreviewUrls[phase]);
-  setMessage(beforeAfterMessage, "");
-};
-
-const resetAddBeforeAfterEditor = () => {
-  Object.entries(addBeforeAfterPreviewUrls).forEach(([phase, url]) => {
-    if (url) URL.revokeObjectURL(url);
-    addBeforeAfterPreviewUrls[phase] = "";
-  });
-  if (!beforeAfterAddEditor) return;
-  beforeAfterAddEditor.innerHTML = beforeAfterFramingEditor({
-    framing: beforeAfterFramingDefaults,
-    attribute: "data-ba-add-field"
-  });
-};
-
-const readAddBeforeAfterFraming = () => readFramingFromEditor(beforeAfterAddEditor);
-
-const previewFileObjectUrls = new WeakMap();
-
-const setEditBeforeAfterPreviewFile = (input, phase) => {
-  const editor = input?.closest("[data-ba-project-id]")?.querySelector("[data-ba-framing-editor]");
-  if (!editor) return;
-  const existingUrl = previewFileObjectUrls.get(input);
-  if (existingUrl) URL.revokeObjectURL(existingUrl);
-  previewFileObjectUrls.delete(input);
-
-  const file = input.files?.[0];
-  if (!file) return;
-  if (!isAllowedProjectImage(file)) {
-    setMessage(beforeAfterMessage, "Please choose a JPG, PNG, or WEBP image.", "error");
-    input.value = "";
-    return;
-  }
-
-  const previewUrl = URL.createObjectURL(file);
-  previewFileObjectUrls.set(input, previewUrl);
-  setFramingPreviewImage(editor, phase, previewUrl);
-};
-
-const isAllowedProjectImage = (file) => {
-  if (!file) return false;
-  const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
-  const allowedExtensions = [".jpg", ".jpeg", ".png", ".webp"];
-  const name = file.name.toLowerCase();
-  return allowedTypes.includes(file.type) || allowedExtensions.some((extension) => name.endsWith(extension));
-};
-
-const imageOptimizationDefaults = {
-  beforeAfter: { maxDimension: 1800, quality: 0.84 },
-  icon: { maxDimension: 512, quality: 0.84 }
-};
-
-const shouldOptimizeRasterImage = (file) => {
-  const rasterTypes = ["image/jpeg", "image/png", "image/webp"];
-  const rasterExtensions = [".jpg", ".jpeg", ".png", ".webp"];
-  const name = file?.name?.toLowerCase() || "";
-  return rasterTypes.includes(file?.type) || rasterExtensions.some((extension) => name.endsWith(extension));
-};
-
-const loadImageBitmap = async (file) => {
-  if (window.createImageBitmap) {
-    try {
-      return createImageBitmap(file, { imageOrientation: "from-image" });
-    } catch (error) {
-      console.warn("createImageBitmap failed; falling back to image element.", error);
-    }
-  }
-
-  return new Promise((resolve, reject) => {
-    const image = new Image();
-    const objectUrl = URL.createObjectURL(file);
-    image.onload = () => {
-      URL.revokeObjectURL(objectUrl);
-      resolve(image);
-    };
-    image.onerror = () => {
-      URL.revokeObjectURL(objectUrl);
-      reject(new Error("Image could not be loaded"));
-    };
-    image.src = objectUrl;
-  });
-};
-
-const canvasToWebpBlob = (canvas, quality) => new Promise((resolve, reject) => {
-  canvas.toBlob((blob) => {
-    if (blob) {
-      resolve(blob);
-      return;
-    }
-    reject(new Error("Image optimization failed"));
-  }, "image/webp", quality);
-});
-
-const webpFileName = (name, fallback = "image") => {
-  const baseName = name.replace(/\.[^.]+$/i, "") || fallback;
-  return `${baseName}.webp`;
-};
-
-async function optimizeImageForUpload(file, options = imageOptimizationDefaults.beforeAfter) {
-  if (!shouldOptimizeRasterImage(file)) return file;
-
-  const source = await loadImageBitmap(file);
-  const sourceWidth = source.width || source.naturalWidth;
-  const sourceHeight = source.height || source.naturalHeight;
-  const maxDimension = options.maxDimension || imageOptimizationDefaults.beforeAfter.maxDimension;
-  const scale = Math.min(1, maxDimension / Math.max(sourceWidth, sourceHeight));
-  const targetWidth = Math.max(1, Math.round(sourceWidth * scale));
-  const targetHeight = Math.max(1, Math.round(sourceHeight * scale));
-  const canvas = document.createElement("canvas");
-  canvas.width = targetWidth;
-  canvas.height = targetHeight;
-  const context = canvas.getContext("2d", { alpha: true });
-  if (!context) throw new Error("Image optimization failed");
-
-  context.drawImage(source, 0, 0, targetWidth, targetHeight);
-  if (typeof source.close === "function") source.close();
-
-  const blob = await canvasToWebpBlob(canvas, options.quality || 0.84);
-  return new File([blob], webpFileName(file.name), {
-    type: "image/webp",
-    lastModified: Date.now()
-  });
-}
-
-async function uploadBeforeAfterImage(file, type, projectKey) {
-  if (!isAllowedProjectImage(file)) throw new Error("Error uploading image");
-  const optimizedFile = await optimizeImageForUpload(file, imageOptimizationDefaults.beforeAfter);
-  const fileName = safeFileName(optimizedFile.name) || `${type}.webp`;
-  const filePath = `before-after/${projectKey}-${type}-${fileName}`;
-  const { error } = await client.storage
-    .from("before-after")
-    .upload(filePath, optimizedFile, {
-      cacheControl: "3600",
-      contentType: optimizedFile.type || undefined,
-      upsert: true
+    linkNodes(footer).forEach((node, index) => {
+      fields[`link.${index}.href`] = { label: `Footer link ${index + 1} href`, value: node.getAttribute("href") || "" };
     });
-
-  if (error) {
-    console.error("Before/After image upload failed", error);
-    throw new Error("Error uploading image");
+    extractedSections.push({
+      section_key: "footer",
+      section_type: "footer",
+      label: "Footer",
+      sort_order: 9990,
+      is_visible: true,
+      content: { fields, media: extractMedia(footer) }
+    });
   }
 
-  const { data } = client.storage.from("before-after").getPublicUrl(filePath);
-  return data?.publicUrl || "";
-}
-
-async function createBeforeAfterProject() {
-  const beforeFile = beforeAfterBeforeInput?.files?.[0];
-  const afterFile = beforeAfterAfterInput?.files?.[0];
-  const title = beforeAfterTitleInput?.value.trim() || "";
-  if (!beforeFile) throw new Error("Before image is required");
-  if (!afterFile) throw new Error("After image is required");
-  if (!title) throw new Error("Title is required");
-
-  setMessage(beforeAfterMessage, "Uploading...");
-  const projectKey = Date.now();
-  const [beforeUrl, afterUrl] = await Promise.all([
-    uploadBeforeAfterImage(beforeFile, "before", projectKey),
-    uploadBeforeAfterImage(afterFile, "after", projectKey)
-  ]);
-
-  if (!beforeUrl || !afterUrl) throw new Error("Error uploading image");
-
-  const nextOrder = beforeAfterProjects.length
-    ? Math.max(...beforeAfterProjects.map((project) => Number(project.sort_order) || 0)) + 1
-    : 1;
-  const { error } = await client.from("before_after_projects").insert({
-    before_image_url: beforeUrl,
-    after_image_url: afterUrl,
-    title,
-    sort_order: nextOrder,
-    is_active: Boolean(beforeAfterActiveInput?.checked),
-    ...readAddBeforeAfterFraming()
-  });
-
-  if (error) {
-    console.error("Before/After project save failed", error);
-    throw new Error("Error saving project");
-  }
-
-  if (beforeAfterBeforeInput) beforeAfterBeforeInput.value = "";
-  if (beforeAfterAfterInput) beforeAfterAfterInput.value = "";
-  if (beforeAfterTitleInput) beforeAfterTitleInput.value = "";
-  if (beforeAfterActiveInput) beforeAfterActiveInput.checked = true;
-  resetAddBeforeAfterEditor();
-  await loadBeforeAfterProjects();
-  setMessage(beforeAfterMessage, "Saved successfully", "success");
-}
-
-async function saveBeforeAfterProjectEdits() {
-  syncBeforeAfterProjects();
-  for (const project of beforeAfterProjects) {
-    const { error } = await client.from("before_after_projects").update({
-      title: project.title,
-      sort_order: Number(project.sort_order || 0),
-      is_active: Boolean(project.is_active),
-      ...projectFraming(project)
-    }).eq("id", project.id);
-    if (error) throw error;
-  }
-  await loadBeforeAfterProjects();
-}
-
-async function saveBeforeAfterProject(id) {
-  const card = document.querySelector(`[data-ba-project-id="${CSS.escape(id)}"]`);
-  const project = beforeAfterProjects.find((item) => item.id === id);
-  if (!card || !project) return;
-
-  const title = card.querySelector('[data-ba-project-field="title"]')?.value.trim() || "";
-  if (!title) throw new Error("Title is required");
-
-  const beforeFile = card.querySelector('[data-ba-project-field="before_file"]')?.files?.[0];
-  const afterFile = card.querySelector('[data-ba-project-field="after_file"]')?.files?.[0];
-  const payload = {
-    title,
-    sort_order: Number(card.querySelector('[data-ba-project-field="sort_order"]')?.value || project.sort_order || 0),
-    is_active: Boolean(card.querySelector('[data-ba-project-field="is_active"]')?.checked),
-    shared_zoom: framingZoom(card.querySelector('[data-ba-project-field="shared_zoom"]')?.value),
-    before_zoom: framingZoom(card.querySelector('[data-ba-project-field="before_zoom"]')?.value),
-    after_zoom: framingZoom(card.querySelector('[data-ba-project-field="after_zoom"]')?.value),
-    before_position_x: framingPercent(card.querySelector('[data-ba-project-field="before_position_x"]')?.value),
-    before_position_y: framingPercent(card.querySelector('[data-ba-project-field="before_position_y"]')?.value),
-    after_position_x: framingPercent(card.querySelector('[data-ba-project-field="after_position_x"]')?.value),
-    after_position_y: framingPercent(card.querySelector('[data-ba-project-field="after_position_y"]')?.value)
+  return {
+    page_key: page.page_key,
+    title: page.title,
+    path: page.path.replace("..", "") || "/",
+    seo: {
+      title: doc.title,
+      description: getMeta(doc, "meta[name='description']"),
+      canonical: getMeta(doc, "link[rel='canonical']", "href"),
+      ogTitle: getMeta(doc, "meta[property='og:title']"),
+      ogDescription: getMeta(doc, "meta[property='og:description']"),
+      ogImage: getMeta(doc, "meta[property='og:image']"),
+      ogUrl: getMeta(doc, "meta[property='og:url']")
+    },
+    schema_json: parseSchema(doc),
+    sections: extractedSections
   };
+};
 
-  if (beforeFile) {
-    setMessage(beforeAfterMessage, "Uploading...");
-    payload.before_image_url = await uploadBeforeAfterImage(beforeFile, "before", id);
-  }
-  if (afterFile) {
-    setMessage(beforeAfterMessage, "Uploading...");
-    payload.after_image_url = await uploadBeforeAfterImage(afterFile, "after", id);
-  }
+const renderPageOptions = () => {
+  pageSelector.innerHTML = pages.map((page) => `<option value="${page.page_key}">${escapeHtml(page.title)}</option>`).join("");
+  pageSelector.value = currentPageKey;
+};
 
-  const { error } = await client.from("before_after_projects").update(payload).eq("id", id);
-  if (error) {
-    console.error("Before/After project save failed", error);
-    throw new Error("Error saving project");
-  }
-  await loadBeforeAfterProjects();
-}
+const activeSection = () => sections.find((section) => section.section_key === activeSectionKey);
 
-async function saveBeforeAfterOrder() {
-  for (const [index, project] of beforeAfterProjects.entries()) {
-    const nextOrder = index + 1;
-    project.sort_order = nextOrder;
-    const { error } = await client
-      .from("before_after_projects")
-      .update({ sort_order: nextOrder })
-      .eq("id", project.id);
-    if (error) throw error;
-  }
-  renderBeforeAfterProjects();
-}
-
-async function deleteBeforeAfterProject(id) {
-  const { error } = await client.from("before_after_projects").delete().eq("id", id);
-  if (error) throw error;
-  beforeAfterProjects = beforeAfterProjects.filter((project) => project.id !== id);
-  renderBeforeAfterProjects();
-}
-
-async function loadFaqs() {
-  let data;
-  try {
-    data = await adminCmsRequest("faqs", "?select=id,question,answer,sort_order,is_active&order=sort_order.asc");
-  } catch (error) {
-    faqs = fallbackFaqs.map((faq) => ({ ...faq }));
-    renderFaqs();
-    throw error;
-  }
-  faqs = data?.length ? data : fallbackFaqs.map((faq) => ({ ...faq }));
-  renderFaqs();
-}
-
-function renderFaqs() {
-  sortByOrder(faqs);
-  lists.faqs.innerHTML = faqs.map((faq, index) => `
-    <article class="faq-editor" data-faq-id="${faq.id}">
-      <div class="faq-row">
-        <strong>FAQ ${index + 1}</strong>
-        <label class="toggle-label">
-          <input type="checkbox" data-faq-field="is_active" ${faq.is_active ? "checked" : ""}>
-          Active
-        </label>
-      </div>
-      <label>
-        Question
-        <input type="text" data-faq-field="question" value="${escapeHtml(faq.question || "")}">
-      </label>
-      <label>
-        Answer
-        <textarea data-faq-field="answer" rows="4">${escapeHtml(faq.answer || "")}</textarea>
-      </label>
-      <div class="faq-row">
-        <label>
-          Sort order
-          <input type="number" data-faq-field="sort_order" value="${Number(faq.sort_order || index + 1)}">
-        </label>
-        <button class="btn delete-btn" type="button" data-delete-faq="${faq.id}">Delete FAQ</button>
-      </div>
-    </article>
+const renderSections = () => {
+  sectionList.innerHTML = sections.map((section, index) => `
+    <button class="section-item ${section.section_key === activeSectionKey ? "is-active" : ""} ${section.is_visible ? "" : "is-hidden"}" draggable="true" data-section-key="${escapeHtml(section.section_key)}">
+      <span class="section-meta">
+        <strong>${escapeHtml(section.label)}</strong>
+        <span class="pill">${escapeHtml(section.section_type)}</span>
+        <span class="small-note">${section.is_visible ? "Visible" : "Hidden"} · #${index + 1}</span>
+      </span>
+      <span class="drag-handle" aria-hidden="true">::</span>
+    </button>
   `).join("");
-}
+  document.querySelector("[data-duplicate-section]").disabled = !activeSection();
+  document.querySelector("[data-toggle-section]").disabled = !activeSection();
+};
 
-function syncFaqState() {
-  document.querySelectorAll("[data-faq-id]").forEach((card) => {
-    const id = card.dataset.faqId;
-    const faq = faqs.find((item) => item.id === id);
-    if (!faq) return;
-    faq.question = card.querySelector('[data-faq-field="question"]')?.value.trim() || "";
-    faq.answer = card.querySelector('[data-faq-field="answer"]')?.value.trim() || "";
-    faq.sort_order = Number(card.querySelector('[data-faq-field="sort_order"]')?.value || 0);
-    faq.is_active = Boolean(card.querySelector('[data-faq-field="is_active"]')?.checked);
-  });
-}
+const sectionFieldInput = (key, field) => {
+  const value = field?.value || "";
+  const isLong = value.length > 90 || key.startsWith("text.");
+  return `
+    <label>
+      ${escapeHtml(field?.label || key)}
+      ${isLong
+        ? `<textarea data-field-key="${escapeHtml(key)}" rows="3">${escapeHtml(value)}</textarea>`
+        : `<input data-field-key="${escapeHtml(key)}" value="${escapeHtml(value)}">`}
+    </label>
+  `;
+};
 
-async function saveFaqs() {
-  syncFaqState();
-  for (const faq of faqs) {
-    const payload = {
-      question: faq.question,
-      answer: faq.answer,
-      sort_order: Number(faq.sort_order || 0),
-      is_active: Boolean(faq.is_active)
-    };
-    if (faq.id.startsWith("new-")) {
-      const { error } = await client.from("faqs").insert(payload);
-      if (error) throw error;
-    } else {
-      const { error } = await client.from("faqs").update(payload).eq("id", faq.id);
-      if (error) throw error;
-    }
+const renderFaqEditor = (section) => {
+  const faqs = section.content.faqs || [];
+  return `
+    <div class="subpanel">
+      <div class="card-head compact">
+        <div><h3>FAQ</h3><p>Add, edit, delete and reorder questions.</p></div>
+        <button class="btn btn-secondary" type="button" data-add-faq>Add FAQ</button>
+      </div>
+      <div class="faq-list">
+        ${faqs.map((faq, index) => `
+          <div class="faq-editor" data-faq-index="${index}">
+            <div class="row-actions">
+              <button class="btn btn-secondary" type="button" data-faq-up="${index}">Up</button>
+              <button class="btn btn-secondary" type="button" data-faq-down="${index}">Down</button>
+              <button class="btn btn-danger" type="button" data-faq-delete="${index}">Delete</button>
+            </div>
+            <label>Question<input data-faq-field="question" value="${escapeHtml(faq.question)}"></label>
+            <label>Answer<textarea data-faq-field="answer" rows="3">${escapeHtml(faq.answer)}</textarea></label>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+  `;
+};
+
+const mediaItemEditor = (kind, item, index) => {
+  const src = item.src || item.beforeSrc || "";
+  const alt = item.alt || item.beforeAlt || "";
+  const afterSrc = item.afterSrc || "";
+  const afterAlt = item.afterAlt || "";
+  return `
+    <div class="media-row" data-media-kind="${kind}" data-media-index="${index}">
+      <img class="preview-img" src="${escapeHtml(src || afterSrc)}" alt="">
+      <div class="form-grid">
+        <label>Title / caption<input data-media-field="title" value="${escapeHtml(item.title || item.caption || "")}"></label>
+        <label>Image URL<input data-media-field="src" value="${escapeHtml(src)}"></label>
+        <label>Alt text<input data-media-field="alt" value="${escapeHtml(alt)}"></label>
+        ${kind === "beforeAfter" ? `
+          <label>After image URL<input data-media-field="afterSrc" value="${escapeHtml(afterSrc)}"></label>
+          <label>After alt text<input data-media-field="afterAlt" value="${escapeHtml(afterAlt)}"></label>
+        ` : ""}
+        ${kind === "gallery" ? `<label>Caption<input data-media-field="caption" value="${escapeHtml(item.caption || "")}"></label>` : ""}
+      </div>
+      <div class="row-actions">
+        <input type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" data-media-upload>
+        <button class="btn btn-secondary" type="button" data-media-up>Up</button>
+        <button class="btn btn-secondary" type="button" data-media-down>Down</button>
+        <button class="btn btn-danger" type="button" data-media-delete>Delete</button>
+      </div>
+    </div>
+  `;
+};
+
+const renderMediaEditor = (section) => {
+  const media = section.content.media || {};
+  const blocks = [];
+  if (section.section_type === "before_after" || media.beforeAfter?.length) {
+    blocks.push(`
+      <div class="subpanel media-editor">
+        <div class="card-head compact"><div><h3>Before / After</h3><p>Upload, replace, reorder, captions and alt text.</p></div><button class="btn btn-secondary" type="button" data-add-media="beforeAfter">Add Pair</button></div>
+        ${(media.beforeAfter || []).map((item, index) => mediaItemEditor("beforeAfter", item, index)).join("")}
+      </div>
+    `);
   }
-  await loadFaqs();
-}
+  if (section.section_type === "gallery" || media.gallery?.length) {
+    blocks.push(`
+      <div class="subpanel media-editor">
+        <div class="card-head compact"><div><h3>Gallery</h3><p>Large carousel images, captions and alt text.</p></div><button class="btn btn-secondary" type="button" data-add-media="gallery">Add Image</button></div>
+        ${(media.gallery || []).map((item, index) => mediaItemEditor("gallery", item, index)).join("")}
+      </div>
+    `);
+  }
+  if (media.images?.length) {
+    blocks.push(`
+      <div class="subpanel media-editor">
+        <div class="card-head compact"><div><h3>Section Images</h3><p>Replace inline images without changing layout.</p></div></div>
+        ${media.images.map((item, index) => mediaItemEditor("images", item, index)).join("")}
+      </div>
+    `);
+  }
+  return blocks.join("");
+};
 
-async function deleteFaq(id) {
-  if (id.startsWith("new-")) {
-    faqs = faqs.filter((faq) => faq.id !== id);
-    renderFaqs();
+const renderSectionEditor = () => {
+  const section = activeSection();
+  if (!section) {
+    sectionEditor.className = "empty-state";
+    sectionEditor.textContent = "Choose a section to edit.";
     return;
   }
-  const { error } = await client.from("faqs").delete().eq("id", id);
-  if (error) throw error;
-  faqs = faqs.filter((faq) => faq.id !== id);
-  renderFaqs();
-}
+  sectionEditor.className = "editor-fields";
+  sectionEditor.innerHTML = `
+    <div class="form-grid">
+      <label>Section label<input data-section-prop="label" value="${escapeHtml(section.label)}"></label>
+      <label>Section type<input data-section-prop="section_type" value="${escapeHtml(section.section_type)}"></label>
+      <label class="toggle-line"><input type="checkbox" data-section-visible ${section.is_visible ? "checked" : ""}> Visible on public page</label>
+    </div>
+    <div class="subpanel">
+      <div class="card-head compact"><div><h3>Text, buttons and links</h3><p>These fields are extracted from the current public section.</p></div></div>
+      <div class="form-grid">${Object.entries(section.content.fields || {}).map(([key, field]) => sectionFieldInput(key, field)).join("")}</div>
+    </div>
+    ${(section.content.faqs || []).length || section.section_type === "faq" ? renderFaqEditor(section) : ""}
+    ${renderMediaEditor(section)}
+  `;
+};
 
-async function loadAdminData() {
-  if (adminLoadPromise) return adminLoadPromise;
-  if (contentLoaded && whyFeaturesLoadedFromSupabase) {
-    setMessage(statusMessage, "Content loaded successfully", "success");
-    return Promise.resolve();
-  }
+const renderSeo = () => {
+  const seo = currentPage?.seo || {};
+  seoInputs.forEach((input) => {
+    input.value = seo[input.dataset.seo] || "";
+  });
+  schemaInput.value = JSON.stringify(currentPage?.schema_json || {}, null, 2);
+};
 
-  adminLoadPromise = (async () => {
-    isAdminLoading = true;
-    contentLoaded = false;
-    whyFeaturesLoadedFromSupabase = false;
-    setMessage(statusMessage, "Loading content...");
+const renderAll = () => {
+  renderPageOptions();
+  renderSeo();
+  renderSections();
+  renderSectionEditor();
+};
 
-    const loaders = [
-      ["Business Settings", loadSettings, true],
-      ["Homepage Content", loadHomepageContent, true],
-      ["Services", loadServices, false],
-      ["Why Choose Us", loadWhyFeatures, true],
-      ["About", loadAboutParagraphs, false],
-      ["Footer Social Links", loadSocialLinks, false],
-      ["Before / After Projects", loadBeforeAfterProjects, false],
-      ["FAQs", loadFaqs, false]
-    ];
-    const results = await Promise.allSettled(loaders.map(([, loader]) => loader()));
-    const failed = results
-      .map((result, index) => ({ result, name: loaders[index][0], critical: loaders[index][2] }))
-      .filter((entry) => entry.result.status === "rejected");
-
-    failed.forEach((entry) => {
-      console.error(`${entry.name} failed to load`, entry.result.reason);
-    });
-
-    const criticalFailed = failed.some((entry) => entry.critical);
-    isAdminLoading = false;
-    contentLoaded = !criticalFailed;
-
-    if (criticalFailed || failed.length) {
-      setMessage(statusMessage, "Some content could not be loaded. Please refresh or check Supabase.", "error");
-      return;
-    }
-
-    setMessage(statusMessage, "Content loaded successfully", "success");
-  })();
-
+const loadPages = async () => {
   try {
-    await adminLoadPromise;
-  } finally {
-    adminLoadPromise = null;
-  }
-}
-
-async function handleSave(action) {
-  setMessage(statusMessage, "Saving...");
-  try {
-    await action();
-    setMessage(statusMessage, "Saved successfully", "success");
+    const rows = await cmsRequest("cms_pages", "?select=page_key,title,path,sort_order,is_active&order=sort_order.asc");
+    if (rows?.length) pages = rows;
   } catch (error) {
-    console.error(error);
-    setMessage(statusMessage, error.message || "Save failed.", "error");
+    setMessage(statusMessage, "CMS tables are not available yet. Load defaults and save after running the SQL migration.", "error");
   }
-}
-
-const isAllowedIconFile = (file) => {
-  if (!file) return false;
-  const allowedTypes = ["image/svg+xml", "image/png", "image/jpeg", "image/webp"];
-  const allowedExtensions = [".svg", ".png", ".jpg", ".jpeg", ".webp"];
-  const name = file.name.toLowerCase();
-  return allowedTypes.includes(file.type) || allowedExtensions.some((extension) => name.endsWith(extension));
+  renderPageOptions();
 };
 
-const resetIconModal = () => {
-  selectedIconFile = null;
-  if (selectedIconPreviewUrl) URL.revokeObjectURL(selectedIconPreviewUrl);
-  selectedIconPreviewUrl = "";
-  if (iconFileInput) iconFileInput.value = "";
-  if (iconPreview) {
-    iconPreview.innerHTML = "<span>No icon selected</span>";
+const loadPageFromCms = async (pageKey) => {
+  const page = pages.find((item) => item.page_key === pageKey) || pageFallbacks[0];
+  currentPageKey = pageKey;
+  setMessage(statusMessage, "Loading page...");
+  try {
+    const pageRows = await cmsRequest("cms_pages", `?page_key=eq.${encodeURIComponent(pageKey)}&select=page_key,title,path,seo,schema_json&limit=1`);
+    const sectionRows = await cmsRequest("cms_sections", `?page_key=eq.${encodeURIComponent(pageKey)}&select=section_key,section_type,label,sort_order,is_visible,content&order=sort_order.asc`);
+    if (pageRows?.[0] && sectionRows?.length) {
+      currentPage = { ...page, ...pageRows[0] };
+      sections = sectionRows;
+      activeSectionKey = sections[0]?.section_key || null;
+      setMessage(statusMessage, "Loaded from Supabase.", "success");
+    } else {
+      await loadDefaultsFromSite(false);
+      setMessage(statusMessage, "Loaded current site defaults. Save to publish CMS-managed content.", "success");
+    }
+  } catch (error) {
+    await loadDefaultsFromSite(false);
+    setMessage(statusMessage, "Loaded defaults from current site. Run SQL migration before saving.", "error");
   }
-  setMessage(iconModalMessage, "");
+  setDirty(false);
+  renderAll();
 };
 
-const openIconModal = (featureId) => {
-  activeIconFeatureId = featureId;
-  resetIconModal();
-  const feature = whyFeatures.find((item) => item.id === featureId);
-  if (feature?.icon_url && iconPreview) {
-    iconPreview.innerHTML = `<img src="${escapeHtml(feature.icon_url)}" alt="">`;
-  }
-  if (iconModal) iconModal.hidden = false;
+const loadDefaultsFromSite = async (markDirty = true) => {
+  const page = pages.find((item) => item.page_key === currentPageKey) || pageFallbacks[0];
+  const model = await extractPageModel(page);
+  currentPage = model;
+  sections = model.sections;
+  activeSectionKey = sections[0]?.section_key || null;
+  setDirty(markDirty);
+  renderAll();
 };
 
-const closeIconModal = () => {
-  if (iconModal) iconModal.hidden = true;
-  activeIconFeatureId = "";
-  resetIconModal();
-};
-
-const setSelectedIconFile = (file) => {
-  if (!file) return;
-  if (!isAllowedIconFile(file)) {
-    setMessage(iconModalMessage, "Please choose an SVG, PNG, JPG, or WEBP file.", "error");
-    return;
-  }
-  selectedIconFile = file;
-  if (selectedIconPreviewUrl) URL.revokeObjectURL(selectedIconPreviewUrl);
-  selectedIconPreviewUrl = URL.createObjectURL(file);
-  if (iconPreview) {
-    iconPreview.innerHTML = `<img src="${selectedIconPreviewUrl}" alt="">`;
-  }
-  setMessage(iconModalMessage, file.name);
-};
-
-const safeFileName = (name) => name
-  .toLowerCase()
-  .replace(/[^a-z0-9._-]+/g, "-")
-  .replace(/-+/g, "-")
-  .replace(/^-|-$/g, "");
-
-async function uploadIconForActiveFeature() {
-  if (!activeIconFeatureId || !selectedIconFile) {
-    setMessage(iconModalMessage, "Choose an icon file first.", "error");
-    return;
-  }
-
-  if (isAdminLoading || !contentLoaded || !whyFeaturesLoadedFromSupabase) {
-    setMessage(iconModalMessage, "Save is available after Supabase content loads.", "error");
-    return;
-  }
-
-  const feature = whyFeatures.find((item) => item.id === activeIconFeatureId);
-  if (!feature || feature.id.startsWith("fallback-")) {
-    setMessage(iconModalMessage, "Save is available after Supabase content loads.", "error");
-    return;
-  }
-
-  setMessage(iconModalMessage, "Uploading icon...");
-  const uploadFile = await optimizeImageForUpload(selectedIconFile, imageOptimizationDefaults.icon);
-  const fileName = safeFileName(uploadFile.name) || "icon.webp";
-  const folder = safeFileName(feature.feature_key || feature.id) || feature.id;
-  const filePath = `${folder}/${Date.now()}-${fileName}`;
-  const { error: uploadError } = await client.storage
-    .from("why-icons")
-    .upload(filePath, uploadFile, {
-      cacheControl: "3600",
-      contentType: uploadFile.type || undefined,
-      upsert: true
-    });
-
-  if (uploadError) {
-    console.error("Icon upload failed", uploadError);
-    setMessage(iconModalMessage, uploadError.message || "Icon upload failed.", "error");
-    return;
-  }
-
-  const { data: publicData } = client.storage.from("why-icons").getPublicUrl(filePath);
-  const publicUrl = publicData?.publicUrl || "";
-  if (!publicUrl) {
-    setMessage(iconModalMessage, "Could not create public icon URL.", "error");
-    return;
-  }
-
-  const { error: updateError } = await client
-    .from("why_features")
-    .update({ icon_url: publicUrl })
-    .eq("id", feature.id);
-
-  if (updateError) {
-    console.error("Saving icon URL failed", updateError);
-    setMessage(iconModalMessage, updateError.message || "Could not save icon URL.", "error");
-    return;
-  }
-
-  feature.icon_url = publicUrl;
-  const card = document.querySelector(`[data-why-id="${CSS.escape(feature.id)}"]`);
-  const hiddenInput = card?.querySelector('[data-why-field="icon_url"]');
-  const currentPreview = card?.querySelector("[data-icon-current]");
-  if (hiddenInput) hiddenInput.value = publicUrl;
-  if (currentPreview) currentPreview.innerHTML = `<img src="${escapeHtml(publicUrl)}" alt="">`;
-  setMessage(statusMessage, "Icon uploaded and saved.", "success");
-  closeIconModal();
-}
-
-resetAddBeforeAfterEditor();
-
-document.addEventListener("input", (event) => {
-  const key = event.target.dataset.setting;
-  if (!key) return;
-  document.querySelectorAll(`[data-setting="${key}"]`).forEach((input) => {
-    if (input !== event.target) input.value = event.target.value;
+const uploadMedia = async (file) => {
+  const ext = file.name.split(".").pop() || "jpg";
+  const path = `${currentPageKey}/${Date.now()}-${Math.random().toString(16).slice(2)}.${ext}`;
+  const { error } = await client.storage.from("cms-media").upload(path, file, {
+    cacheControl: "31536000",
+    upsert: false,
+    contentType: file.type || undefined
   });
-});
-
-document.addEventListener("dragstart", (event) => {
-  if (event.target.closest("[data-ba-framing-editor]")) event.preventDefault();
-});
-
-const updateFramingRangeFromPointer = (range, clientX) => {
-  if (!range) return;
-  const rect = range.getBoundingClientRect();
-  if (!rect.width) return;
-  const min = Number(range.min || 0);
-  const max = Number(range.max || 100);
-  const step = Number(range.step || 1);
-  const rawPercent = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
-  const rawValue = min + rawPercent * (max - min);
-  const steppedValue = Math.round((rawValue - min) / step) * step + min;
-  const precision = String(range.step || "").includes(".")
-    ? String(range.step).split(".")[1].length
-    : 0;
-  range.value = String(Math.min(max, Math.max(min, Number(steppedValue.toFixed(precision)))));
-  range.dispatchEvent(new Event("input", { bubbles: true }));
+  if (error) throw error;
+  const { data } = client.storage.from("cms-media").getPublicUrl(path);
+  return data.publicUrl;
 };
 
-document.addEventListener("pointerdown", (event) => {
-  const range = event.target.closest(".ba-framing-editor input[type='range']");
-  if (!range) return;
-  event.preventDefault();
-  document.body.classList.add("is-adjusting-framing");
-  activeFramingRange = range;
-  activeFramingPointerId = event.pointerId;
-  activeFramingDragCard = range.closest("[data-ba-project-id]");
-  if (activeFramingDragCard) activeFramingDragCard.draggable = false;
-  range.setPointerCapture?.(event.pointerId);
-  updateFramingRangeFromPointer(range, event.clientX);
-}, true);
-
-document.addEventListener("pointermove", (event) => {
-  if (!activeFramingRange || event.pointerId !== activeFramingPointerId) return;
-  event.preventDefault();
-  updateFramingRangeFromPointer(activeFramingRange, event.clientX);
-}, true);
-
-document.addEventListener("pointerup", () => {
-  if (activeFramingRange) {
-    activeFramingRange.dispatchEvent(new Event("change", { bubbles: true }));
+const savePage = async () => {
+  if (!currentPage) return;
+  setMessage(statusMessage, "Saving...");
+  seoInputs.forEach((input) => {
+    currentPage.seo = currentPage.seo || {};
+    currentPage.seo[input.dataset.seo] = input.value.trim();
+  });
+  try {
+    currentPage.schema_json = schemaInput.value.trim() ? JSON.parse(schemaInput.value) : {};
+  } catch {
+    setMessage(statusMessage, "Schema JSON is invalid.", "error");
+    return;
   }
-  document.body.classList.remove("is-adjusting-framing");
-  if (activeFramingDragCard) activeFramingDragCard.draggable = true;
-  activeFramingRange = null;
-  activeFramingPointerId = null;
-  activeFramingDragCard = null;
-}, true);
 
-document.addEventListener("pointercancel", () => {
-  document.body.classList.remove("is-adjusting-framing");
-  if (activeFramingDragCard) activeFramingDragCard.draggable = true;
-  activeFramingRange = null;
-  activeFramingPointerId = null;
-  activeFramingDragCard = null;
-}, true);
-
-document.addEventListener("mousedown", (event) => {
-  const range = event.target.closest(".ba-framing-editor input[type='range']");
-  if (!range) return;
-  event.preventDefault();
-  document.body.classList.add("is-adjusting-framing");
-  activeFramingRange = range;
-  activeFramingDragCard = range.closest("[data-ba-project-id]");
-  if (activeFramingDragCard) activeFramingDragCard.draggable = false;
-  updateFramingRangeFromPointer(range, event.clientX);
-}, true);
-
-document.addEventListener("mousemove", (event) => {
-  if (!activeFramingRange) return;
-  event.preventDefault();
-  updateFramingRangeFromPointer(activeFramingRange, event.clientX);
-}, true);
-
-document.addEventListener("mouseup", () => {
-  if (!activeFramingRange) return;
-  activeFramingRange.dispatchEvent(new Event("change", { bubbles: true }));
-  document.body.classList.remove("is-adjusting-framing");
-  if (activeFramingDragCard) activeFramingDragCard.draggable = true;
-  activeFramingRange = null;
-  activeFramingPointerId = null;
-  activeFramingDragCard = null;
-}, true);
+  const pagePayload = {
+    page_key: currentPage.page_key,
+    title: currentPage.title || pages.find((page) => page.page_key === currentPageKey)?.title || currentPageKey,
+    path: currentPage.path || "/",
+    seo: currentPage.seo || {},
+    schema_json: currentPage.schema_json || {},
+    sort_order: pages.findIndex((page) => page.page_key === currentPageKey) * 10,
+    is_active: true
+  };
+  const { error: pageError } = await client.from("cms_pages").upsert(pagePayload, { onConflict: "page_key" });
+  if (pageError) {
+    setMessage(statusMessage, `${pageError.message}. Run /supabase/migrations/admin_cms.sql if needed.`, "error");
+    return;
+  }
+  const rows = sections.map((section, index) => ({
+    page_key: currentPageKey,
+    section_key: section.section_key,
+    section_type: section.section_type,
+    label: section.label,
+    sort_order: (index + 1) * 10,
+    is_visible: section.is_visible,
+    content: section.content || {}
+  }));
+  const { error: sectionsError } = await client.from("cms_sections").upsert(rows, { onConflict: "page_key,section_key" });
+  if (sectionsError) {
+    setMessage(statusMessage, sectionsError.message, "error");
+    return;
+  }
+  await client.from("cms_revisions").insert({ page_key: currentPageKey, snapshot: { page: pagePayload, sections: rows } });
+  setDirty(false);
+  setMessage(statusMessage, "Saved successfully.", "success");
+};
 
 loginForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   setMessage(loginMessage, "Signing in...");
-  const formData = new FormData(loginForm);
-  const email = formData.get("email");
-  const password = formData.get("password");
-  const { error } = await client.auth.signInWithPassword({ email, password });
+  const form = new FormData(loginForm);
+  const { error } = await client.auth.signInWithPassword({
+    email: form.get("email"),
+    password: form.get("password")
+  });
   if (error) {
     setMessage(loginMessage, error.message, "error");
     return;
   }
-  loginForm.reset();
-  setMessage(loginMessage, "");
+  await showApp();
 });
 
 document.querySelector("[data-logout]").addEventListener("click", async () => {
-  resetAdminState();
-  showAdmin(false);
-  const { error } = await client.auth.signOut();
-  if (error) setMessage(loginMessage, error.message || "Logout failed.", "error");
+  await client.auth.signOut();
+  authPanel.hidden = false;
+  adminPanel.hidden = true;
 });
 
-document.querySelector("[data-save-settings]").addEventListener("click", () => {
-  handleSave(() => saveSettings(settingKeys), "Business settings saved.");
+pageSelector.addEventListener("change", () => loadPageFromCms(pageSelector.value));
+document.querySelector("[data-load-current]").addEventListener("click", () => loadPageFromCms(currentPageKey));
+document.querySelector("[data-seed-current]").addEventListener("click", async () => {
+  await loadDefaultsFromSite(true);
+  setMessage(statusMessage, "Defaults loaded from current public page. Review and save.", "success");
+});
+document.querySelector("[data-save-page]").addEventListener("click", savePage);
+
+sectionList.addEventListener("click", (event) => {
+  const item = event.target.closest("[data-section-key]");
+  if (!item) return;
+  activeSectionKey = item.dataset.sectionKey;
+  renderSections();
+  renderSectionEditor();
 });
 
-document.querySelector("[data-save-homepage]").addEventListener("click", () => {
-  handleSave(() => saveHomepageContent(["hero.eyebrow", "hero.title", "hero.subtitle", "hero.cta_text"]), "Homepage content saved.");
+let draggedKey = null;
+sectionList.addEventListener("dragstart", (event) => {
+  draggedKey = event.target.closest("[data-section-key]")?.dataset.sectionKey || null;
 });
-
-document.querySelector("[data-save-services]").addEventListener("click", () => {
-  handleSave(async () => {
-    await saveHomepageContent(["services.title", "services.subtitle"]);
-    await saveServices();
-  }, "Services section saved.");
-});
-
-document.querySelector("[data-save-why]").addEventListener("click", () => {
-  handleSave(async () => {
-    await saveHomepageContent(["why.title", "why.subtitle"]);
-    await saveWhyFeatures();
-  }, "Why section saved.");
-});
-
-document.querySelector("[data-save-about]").addEventListener("click", () => {
-  handleSave(async () => {
-    await saveHomepageContent(["about.title", "about.cta_text"]);
-    await saveAboutParagraphs();
-  }, "About section saved.");
-});
-
-document.querySelector("[data-save-contact]").addEventListener("click", () => {
-  handleSave(async () => {
-    await saveHomepageContent(["contact.title", "contact.description"]);
-    await saveSettings(["business_phone", "business_email", "business_hours", "service_area_description"]);
-  }, "Contact section saved.");
-});
-
-document.querySelector("[data-save-footer]").addEventListener("click", () => {
-  handleSave(async () => {
-    await saveHomepageContent(["footer.description", "footer.copyright"]);
-    await saveSettings(["business_phone", "business_email"]);
-    await saveSocialLinks();
-  }, "Footer saved.");
-});
-
-document.querySelector("[data-save-before-after]").addEventListener("click", () => {
-  handleSave(async () => {
-    await createBeforeAfterProject();
-  });
-});
-
-beforeAfterBeforeInput?.addEventListener("change", () => {
-  setAddBeforeAfterPreviewFile("before", beforeAfterBeforeInput.files?.[0]);
-});
-
-beforeAfterAfterInput?.addEventListener("change", () => {
-  setAddBeforeAfterPreviewFile("after", beforeAfterAfterInput.files?.[0]);
-});
-
-document.querySelector("[data-save-faqs]").addEventListener("click", () => {
-  handleSave(saveFaqs, "FAQs saved.");
-});
-
-document.querySelector("[data-add-about]").addEventListener("click", () => {
-  syncAboutParagraphs();
-  aboutParagraphs.push({
-    id: `new-${Date.now()}`,
-    paragraph_text: "",
-    sort_order: aboutParagraphs.length + 1,
-    is_active: true
-  });
-  renderAboutParagraphs();
-});
-
-document.querySelector("[data-add-social]").addEventListener("click", () => {
-  syncSocialLinks();
-  socialLinks.push({
-    id: `new-${Date.now()}`,
-    platform: "",
-    url: "",
-    sort_order: socialLinks.length + 1,
-    is_active: true
-  });
-  renderSocialLinks();
-});
-
-document.querySelector("[data-add-faq]").addEventListener("click", () => {
-  syncFaqState();
-  faqs.push({
-    id: `new-${Date.now()}`,
-    question: "",
-    answer: "",
-    sort_order: faqs.length + 1,
-    is_active: true
-  });
-  renderFaqs();
-});
-
-lists.why.addEventListener("click", (event) => {
-  const removeButton = event.target.closest("[data-remove-icon]");
-  if (removeButton) {
-    const card = removeButton.closest("[data-why-id]");
-    const item = whyFeatures.find((feature) => feature.id === removeButton.dataset.removeIcon);
-    const iconText = card?.querySelector('[data-why-field="icon_text"]')?.value.trim() || item?.icon_text || "";
-    const hiddenInput = card?.querySelector('[data-why-field="icon_url"]');
-    const currentPreview = card?.querySelector("[data-icon-current]");
-    if (item) item.icon_url = "";
-    if (hiddenInput) hiddenInput.value = "";
-    if (currentPreview) currentPreview.innerHTML = `<span>${escapeHtml(iconText)}</span>`;
-    removeButton.remove();
-    return;
-  }
-
-  const button = event.target.closest("[data-add-icon]");
-  if (!button) return;
-  openIconModal(button.dataset.addIcon);
-});
-
-iconChooseButton?.addEventListener("click", () => {
-  iconFileInput?.click();
-});
-
-iconFileInput?.addEventListener("change", () => {
-  setSelectedIconFile(iconFileInput.files?.[0]);
-});
-
-iconDropzone?.addEventListener("dragover", (event) => {
+sectionList.addEventListener("dragover", (event) => event.preventDefault());
+sectionList.addEventListener("drop", (event) => {
   event.preventDefault();
-  iconDropzone.classList.add("is-dragging");
+  const targetKey = event.target.closest("[data-section-key]")?.dataset.sectionKey;
+  if (!draggedKey || !targetKey || draggedKey === targetKey) return;
+  const draggedIndex = sections.findIndex((section) => section.section_key === draggedKey);
+  const targetIndex = sections.findIndex((section) => section.section_key === targetKey);
+  const [item] = sections.splice(draggedIndex, 1);
+  sections.splice(targetIndex, 0, item);
+  setDirty();
+  renderSections();
 });
 
-iconDropzone?.addEventListener("dragleave", () => {
-  iconDropzone.classList.remove("is-dragging");
-});
-
-iconDropzone?.addEventListener("drop", (event) => {
-  event.preventDefault();
-  iconDropzone.classList.remove("is-dragging");
-  setSelectedIconFile(event.dataTransfer?.files?.[0]);
-});
-
-document.querySelectorAll("[data-icon-cancel]").forEach((button) => {
-  button.addEventListener("click", closeIconModal);
-});
-
-iconInsertButton?.addEventListener("click", uploadIconForActiveFeature);
-
-lists.about.addEventListener("click", async (event) => {
-  const button = event.target.closest("[data-delete-about]");
-  if (!button) return;
-  if (!window.confirm("Delete this paragraph?")) return;
-  setMessage(statusMessage, "Deleting paragraph...");
-  try {
-    await deleteAboutParagraph(button.dataset.deleteAbout);
-    setMessage(statusMessage, "Paragraph deleted.", "success");
-  } catch (error) {
-    console.error(error);
-    setMessage(statusMessage, error.message || "Delete failed.", "error");
+sectionEditor.addEventListener("input", async (event) => {
+  const section = activeSection();
+  if (!section) return;
+  const fieldKey = event.target.dataset.fieldKey;
+  if (fieldKey) {
+    section.content.fields[fieldKey].value = event.target.value;
+    setDirty();
+  }
+  const prop = event.target.dataset.sectionProp;
+  if (prop) {
+    section[prop] = event.target.value;
+    setDirty();
+    renderSections();
+  }
+  const faqField = event.target.dataset.faqField;
+  if (faqField) {
+    const index = Number(event.target.closest("[data-faq-index]").dataset.faqIndex);
+    section.content.faqs[index][faqField] = event.target.value;
+    setDirty();
+  }
+  const mediaField = event.target.dataset.mediaField;
+  if (mediaField) {
+    const row = event.target.closest("[data-media-kind]");
+    const kind = row.dataset.mediaKind;
+    const index = Number(row.dataset.mediaIndex);
+    const collection = kind === "images" ? section.content.media.images : section.content.media[kind];
+    collection[index][mediaField] = event.target.value;
+    if (mediaField === "title" && kind === "gallery") collection[index].caption = event.target.value;
+    setDirty();
   }
 });
 
-lists.social.addEventListener("click", async (event) => {
-  const button = event.target.closest("[data-delete-social]");
-  if (!button) return;
-  if (!window.confirm("Delete this social link?")) return;
-  setMessage(statusMessage, "Deleting social link...");
-  try {
-    await deleteSocialLink(button.dataset.deleteSocial);
-    setMessage(statusMessage, "Social link deleted.", "success");
-  } catch (error) {
-    console.error(error);
-    setMessage(statusMessage, error.message || "Delete failed.", "error");
+sectionEditor.addEventListener("change", async (event) => {
+  const section = activeSection();
+  if (!section) return;
+  if (event.target.matches("[data-section-visible]")) {
+    section.is_visible = event.target.checked;
+    setDirty();
+    renderSections();
   }
-});
-
-lists.beforeAfter?.addEventListener("click", async (event) => {
-  const editButton = event.target.closest("[data-edit-before-after]");
-  if (editButton) {
-    const card = editButton.closest("[data-ba-project-id]");
-    const panel = card?.querySelector("[data-ba-project-edit]");
-    if (panel) panel.hidden = !panel.hidden;
-    return;
-  }
-
-  const saveButton = event.target.closest("[data-save-before-after-project]");
-  if (saveButton) {
-    setMessage(statusMessage, "Saving...");
+  if (event.target.matches("[data-media-upload]") && event.target.files?.[0]) {
+    setMessage(statusMessage, "Uploading image...");
     try {
-      await saveBeforeAfterProject(saveButton.dataset.saveBeforeAfterProject);
-      setMessage(statusMessage, "Saved successfully", "success");
-      setMessage(beforeAfterMessage, "Saved successfully", "success");
+      const url = await uploadMedia(event.target.files[0]);
+      const row = event.target.closest("[data-media-kind]");
+      const kind = row.dataset.mediaKind;
+      const index = Number(row.dataset.mediaIndex);
+      const collection = kind === "images" ? section.content.media.images : section.content.media[kind];
+      if (kind === "beforeAfter" && !collection[index].beforeSrc) collection[index].beforeSrc = url;
+      else collection[index].src = url;
+      setDirty();
+      setMessage(statusMessage, "Image uploaded.", "success");
+      renderSectionEditor();
     } catch (error) {
-      console.error(error);
-      setMessage(statusMessage, error.message || "Error saving project", "error");
-      setMessage(beforeAfterMessage, error.message || "Error saving project", "error");
+      setMessage(statusMessage, error.message, "error");
     }
-    return;
-  }
-
-  const button = event.target.closest("[data-delete-before-after]");
-  if (!button) return;
-  if (!window.confirm("Delete this before/after project?")) return;
-  setMessage(statusMessage, "Deleting project...");
-  try {
-    await deleteBeforeAfterProject(button.dataset.deleteBeforeAfter);
-    setMessage(statusMessage, "Saved successfully", "success");
-  } catch (error) {
-    console.error(error);
-    setMessage(statusMessage, error.message || "Delete failed.", "error");
   }
 });
 
-lists.beforeAfter?.addEventListener("input", (event) => {
-  const input = event.target.closest("[data-ba-project-field]");
-  if (!input || !Object.hasOwn(beforeAfterFramingDefaults, input.dataset.baProjectField)) return;
-  updateBeforeAfterFramingPreview(input.closest("[data-ba-framing-editor]"));
-});
+const moveItem = (items, index, direction) => {
+  const next = index + direction;
+  if (next < 0 || next >= items.length) return;
+  [items[index], items[next]] = [items[next], items[index]];
+};
 
-beforeAfterAddEditor?.addEventListener("input", (event) => {
-  const input = event.target.closest("[data-ba-add-field]");
-  if (!input || !Object.hasOwn(beforeAfterFramingDefaults, input.dataset.baAddField)) return;
-  updateBeforeAfterFramingPreview(input.closest("[data-ba-framing-editor]"));
-});
-
-lists.beforeAfter?.addEventListener("change", (event) => {
-  const beforeFile = event.target.closest('[data-ba-project-field="before_file"]');
-  if (beforeFile) {
-    setEditBeforeAfterPreviewFile(beforeFile, "before");
-    return;
+sectionEditor.addEventListener("click", (event) => {
+  const section = activeSection();
+  if (!section) return;
+  if (event.target.matches("[data-add-faq]")) {
+    section.content.faqs = section.content.faqs || [];
+    section.content.faqs.push({ question: "New question", answer: "New answer" });
+    setDirty(); renderSectionEditor();
   }
-
-  const afterFile = event.target.closest('[data-ba-project-field="after_file"]');
-  if (afterFile) setEditBeforeAfterPreviewFile(afterFile, "after");
-});
-
-let draggedBeforeAfterId = "";
-
-lists.beforeAfter?.addEventListener("dragstart", (event) => {
-  const card = event.target.closest("[data-ba-project-id]");
-  if (!card) return;
-  if (!event.target.closest(".ba-drag-handle")) {
-    event.preventDefault();
-    return;
+  ["faqUp", "faqDown", "faqDelete"].forEach(() => {});
+  const faqUp = event.target.dataset.faqUp;
+  const faqDown = event.target.dataset.faqDown;
+  const faqDelete = event.target.dataset.faqDelete;
+  if (faqUp !== undefined) { moveItem(section.content.faqs, Number(faqUp), -1); setDirty(); renderSectionEditor(); }
+  if (faqDown !== undefined) { moveItem(section.content.faqs, Number(faqDown), 1); setDirty(); renderSectionEditor(); }
+  if (faqDelete !== undefined) { section.content.faqs.splice(Number(faqDelete), 1); setDirty(); renderSectionEditor(); }
+  const addMedia = event.target.dataset.addMedia;
+  if (addMedia) {
+    section.content.media = section.content.media || {};
+    section.content.media[addMedia] = section.content.media[addMedia] || [];
+    section.content.media[addMedia].push(addMedia === "beforeAfter"
+      ? { title: "New before and after", beforeSrc: "", beforeAlt: "", afterSrc: "", afterAlt: "" }
+      : { src: "", alt: "", caption: "New gallery image" });
+    setDirty(); renderSectionEditor();
   }
-  draggedBeforeAfterId = card.dataset.baProjectId;
-  event.dataTransfer.effectAllowed = "move";
-});
-
-lists.beforeAfter?.addEventListener("dragover", (event) => {
-  if (!draggedBeforeAfterId) return;
-  event.preventDefault();
-});
-
-lists.beforeAfter?.addEventListener("drop", async (event) => {
-  event.preventDefault();
-  const targetCard = event.target.closest("[data-ba-project-id]");
-  if (!targetCard || !draggedBeforeAfterId || targetCard.dataset.baProjectId === draggedBeforeAfterId) return;
-
-  const fromIndex = beforeAfterProjects.findIndex((project) => project.id === draggedBeforeAfterId);
-  const toIndex = beforeAfterProjects.findIndex((project) => project.id === targetCard.dataset.baProjectId);
-  if (fromIndex < 0 || toIndex < 0) return;
-
-  const [movedProject] = beforeAfterProjects.splice(fromIndex, 1);
-  beforeAfterProjects.splice(toIndex, 0, movedProject);
-  draggedBeforeAfterId = "";
-  setMessage(statusMessage, "Saving...");
-  try {
-    await saveBeforeAfterOrder();
-    setMessage(statusMessage, "Saved successfully", "success");
-  } catch (error) {
-    console.error(error);
-    setMessage(statusMessage, error.message || "Error saving project", "error");
-    await loadBeforeAfterProjects();
+  const mediaRow = event.target.closest("[data-media-kind]");
+  if (mediaRow && (event.target.matches("[data-media-up]") || event.target.matches("[data-media-down]") || event.target.matches("[data-media-delete]"))) {
+    const kind = mediaRow.dataset.mediaKind;
+    const index = Number(mediaRow.dataset.mediaIndex);
+    const collection = kind === "images" ? section.content.media.images : section.content.media[kind];
+    if (event.target.matches("[data-media-up]")) moveItem(collection, index, -1);
+    if (event.target.matches("[data-media-down]")) moveItem(collection, index, 1);
+    if (event.target.matches("[data-media-delete]")) collection.splice(index, 1);
+    setDirty(); renderSectionEditor();
   }
 });
 
-lists.faqs.addEventListener("click", async (event) => {
-  const button = event.target.closest("[data-delete-faq]");
-  if (!button) return;
-  if (!window.confirm("Delete this FAQ?")) return;
-  setMessage(statusMessage, "Deleting FAQ...");
-  try {
-    await deleteFaq(button.dataset.deleteFaq);
-    setMessage(statusMessage, "FAQ deleted.", "success");
-  } catch (error) {
-    console.error(error);
-    setMessage(statusMessage, error.message || "Delete failed.", "error");
-  }
+document.querySelector("[data-toggle-section]").addEventListener("click", () => {
+  const section = activeSection();
+  if (!section) return;
+  section.is_visible = !section.is_visible;
+  setDirty(); renderSections(); renderSectionEditor();
 });
 
-client.auth.onAuthStateChange(async (_event, session) => {
-  showAdmin(Boolean(session));
-  if (session) {
-    try {
-      await loadAdminData();
-    } catch (error) {
-      console.error(error);
-      setMessage(statusMessage, error.message || "Could not load admin content.", "error");
+document.querySelector("[data-duplicate-section]").addEventListener("click", () => {
+  const section = activeSection();
+  if (!section) return;
+  const copy = JSON.parse(JSON.stringify(section));
+  copy.section_key = `${section.section_key}-copy-${Date.now().toString(36)}`;
+  copy.label = `${section.label} Copy`;
+  copy.content.duplicate_of = section.section_key;
+  const index = sections.findIndex((item) => item.section_key === section.section_key);
+  sections.splice(index + 1, 0, copy);
+  activeSectionKey = copy.section_key;
+  setDirty(); renderAll();
+});
+
+document.querySelector("[data-add-section]").addEventListener("click", () => {
+  const section = {
+    section_key: `custom-${Date.now().toString(36)}`,
+    section_type: "content",
+    label: "New Section",
+    sort_order: sections.length * 10,
+    is_visible: true,
+    content: {
+      fields: {
+        "text.0": { label: "Heading", value: "New Section" },
+        "text.1": { label: "Paragraph", value: "Add helpful content here." }
+      },
+      faqs: [],
+      media: {}
     }
-  } else {
-    resetAdminState();
-  }
+  };
+  sections.push(section);
+  activeSectionKey = section.section_key;
+  setDirty(); renderAll();
 });
+
+seoInputs.forEach((input) => {
+  input.addEventListener("input", () => {
+    currentPage.seo = currentPage.seo || {};
+    currentPage.seo[input.dataset.seo] = input.value;
+    setDirty();
+  });
+});
+schemaInput.addEventListener("input", () => setDirty());
+
+const showApp = async () => {
+  authPanel.hidden = true;
+  adminPanel.hidden = false;
+  await loadPages();
+  await loadPageFromCms(currentPageKey);
+};
 
 client.auth.getSession().then(({ data }) => {
-  showAdmin(Boolean(data.session));
-  if (data.session) {
-    loadAdminData().catch((error) => {
-      console.error(error);
-      setMessage(statusMessage, error.message || "Could not load admin content.", "error");
-    });
-  }
+  if (data.session) showApp();
 });

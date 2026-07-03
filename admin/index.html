@@ -3,28 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Couch and Carpet Heroes Admin</title>
+  <title>Couch and Carpet Heroes Universal CMS</title>
   <meta name="robots" content="noindex, nofollow">
-  <link rel="stylesheet" href="admin.css?v=20260626-ba-fit-editor">
+  <link rel="stylesheet" href="admin.css?v=20260703-universal-cms">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="admin.js?v=20260626-ba-fit-editor" defer></script>
+  <script src="admin.js?v=20260703-universal-cms" defer></script>
 </head>
 <body>
   <main class="admin-shell">
     <section class="login-panel" data-auth-panel>
       <div class="brand-mark">CCH</div>
-      <h1>Admin Login</h1>
-      <p>Sign in to edit basic website content.</p>
-
+      <h1>Universal CMS</h1>
+      <p>Sign in to edit every website page from one reusable section builder.</p>
       <form class="auth-form" data-login-form>
-        <label>
-          Email
-          <input type="email" name="email" autocomplete="email" required>
-        </label>
-        <label>
-          Password
-          <input type="password" name="password" autocomplete="current-password" required>
-        </label>
+        <label>Email<input type="email" name="email" autocomplete="email" required></label>
+        <label>Password<input type="password" name="password" autocomplete="current-password" required></label>
         <button class="btn btn-primary" type="submit">Sign In</button>
         <p class="form-message" data-login-message role="status" aria-live="polite"></p>
       </form>
@@ -34,287 +27,80 @@
       <header class="admin-header">
         <div>
           <p class="eyebrow">Couch and Carpet Heroes</p>
-          <h1>Website Content Admin</h1>
+          <h1>Universal Website CMS</h1>
+          <p>Edit page content through reusable sections without changing public templates.</p>
         </div>
-        <button class="btn btn-secondary" type="button" data-logout>Logout</button>
+        <div class="header-actions">
+          <a class="btn btn-secondary" href="../" target="_blank" rel="noopener">View Site</a>
+          <button class="btn btn-secondary" type="button" data-logout>Logout</button>
+        </div>
       </header>
 
       <p class="status-message" data-status-message role="status" aria-live="polite"></p>
 
-      <section class="admin-card">
-        <div class="card-head">
-          <div>
-            <h2>Business Settings</h2>
-            <p>Update contact details used by website links and messages.</p>
-          </div>
-          <button class="btn btn-primary" type="button" data-save-settings>Save Settings</button>
+      <section class="admin-card page-toolbar">
+        <div class="toolbar-grid">
+          <label>Page
+            <select data-page-selector></select>
+          </label>
+          <label>Save status
+            <input type="text" data-save-status value="Not saved" readonly>
+          </label>
         </div>
-        <div class="form-grid">
-          <label>
-            Business phone
-            <input type="text" data-setting="business_phone" placeholder="650-519-6607">
-          </label>
-          <label>
-            Business email
-            <input type="email" data-setting="business_email" placeholder="info@ccheroes-pro.com">
-          </label>
-          <label>
-            WhatsApp number
-            <input type="text" data-setting="whatsapp_number" placeholder="16505196607">
-          </label>
-          <label>
-            SMS number
-            <input type="text" data-setting="sms_number" placeholder="16505196607">
-          </label>
-          <label>
-            Business hours
-            <input type="text" data-setting="business_hours" placeholder="Mon-Sun: 8AM-8PM">
-          </label>
-          <label>
-            Service area description
-            <input type="text" data-setting="service_area_description" placeholder="Serving Mountain View and nearby Bay Area cities">
-          </label>
+        <div class="card-actions">
+          <button class="btn btn-secondary" type="button" data-load-current>Reload Page</button>
+          <button class="btn btn-secondary" type="button" data-seed-current>Load Defaults From Site</button>
+          <button class="btn btn-primary" type="button" data-save-page>Save Page</button>
         </div>
       </section>
 
-      <section class="admin-card">
-        <div class="card-head">
-          <div>
-            <h2>Homepage Content</h2>
-            <p>Edit the main hero text and primary call-to-action.</p>
+      <section class="admin-grid">
+        <aside class="admin-card side-panel">
+          <div class="card-head compact">
+            <div>
+              <h2>Sections</h2>
+              <p>Drag to reorder. Future section types can be added from the database.</p>
+            </div>
           </div>
-          <button class="btn btn-primary" type="button" data-save-homepage>Save Homepage</button>
-        </div>
-        <div class="form-grid single">
-          <label>
-            Hero eyebrow
-            <input type="text" data-homepage="hero.eyebrow">
-          </label>
-          <label>
-            Hero title
-            <input type="text" data-homepage="hero.title">
-          </label>
-          <label>
-            Hero subtitle
-            <textarea data-homepage="hero.subtitle" rows="4"></textarea>
-          </label>
-          <label>
-            Hero CTA text
-            <input type="text" data-homepage="hero.cta_text">
-          </label>
-        </div>
-      </section>
+          <div class="section-list" data-section-list></div>
+          <button class="btn btn-secondary" type="button" data-add-section>Add Section</button>
+        </aside>
 
-      <section class="admin-card">
-        <div class="card-head">
-          <div>
-            <h2>Services Section</h2>
-            <p>Edit service cards without changing calculator pricing.</p>
-          </div>
-          <button class="btn btn-primary" type="button" data-save-services>Save Services</button>
-        </div>
-        <div class="form-grid single">
-          <label>
-            Section title
-            <input type="text" data-homepage="services.title">
-          </label>
-          <label>
-            Section subtitle
-            <textarea data-homepage="services.subtitle" rows="3"></textarea>
-          </label>
-        </div>
-        <div class="faq-list" data-services-list></div>
-      </section>
+        <div class="editor-stack">
+          <section class="admin-card">
+            <div class="card-head">
+              <div>
+                <h2>SEO</h2>
+                <p>Title, meta description, canonical URL, Open Graph and schema values.</p>
+              </div>
+            </div>
+            <div class="form-grid">
+              <label>Title<input data-seo="title"></label>
+              <label>Canonical<input data-seo="canonical"></label>
+              <label>Meta description<textarea data-seo="description" rows="3"></textarea></label>
+              <label>Open Graph image<input data-seo="ogImage"></label>
+              <label>Open Graph title<input data-seo="ogTitle"></label>
+              <label>Open Graph description<textarea data-seo="ogDescription" rows="3"></textarea></label>
+              <label class="full">Schema JSON<textarea data-schema-json rows="10" spellcheck="false"></textarea></label>
+            </div>
+          </section>
 
-      <section class="admin-card">
-        <div class="card-head">
-          <div>
-            <h2>Why Choose Us</h2>
-            <p>Edit the trust section title, subtitle, and feature cards.</p>
-          </div>
-          <button class="btn btn-primary" type="button" data-save-why>Save Why Section</button>
+          <section class="admin-card">
+            <div class="card-head">
+              <div>
+                <h2>Section Builder</h2>
+                <p>Edit, hide/show, reorder, duplicate and manage section content.</p>
+              </div>
+              <div class="card-actions">
+                <button class="btn btn-secondary" type="button" data-duplicate-section disabled>Duplicate</button>
+                <button class="btn btn-secondary" type="button" data-toggle-section disabled>Hide / Show</button>
+              </div>
+            </div>
+            <div data-section-editor class="empty-state">Choose a section to edit.</div>
+          </section>
         </div>
-        <div class="form-grid single">
-          <label>
-            Section title
-            <input type="text" data-homepage="why.title">
-          </label>
-          <label>
-            Section subtitle
-            <textarea data-homepage="why.subtitle" rows="3"></textarea>
-          </label>
-        </div>
-        <div class="faq-list" data-why-list></div>
-      </section>
-
-      <section class="admin-card">
-        <div class="card-head">
-          <div>
-            <h2>About Section</h2>
-            <p>Edit the simple about content shown on the public website.</p>
-          </div>
-          <div class="card-actions">
-            <button class="btn btn-secondary" type="button" data-add-about>Add Paragraph</button>
-            <button class="btn btn-primary" type="button" data-save-about>Save About</button>
-          </div>
-        </div>
-        <div class="form-grid single">
-          <label>
-            About title
-            <input type="text" data-homepage="about.title">
-          </label>
-          <label>
-            About CTA text
-            <input type="text" data-homepage="about.cta_text">
-          </label>
-        </div>
-        <div class="faq-list" data-about-list></div>
-      </section>
-
-      <section class="admin-card">
-        <div class="card-head">
-          <div>
-            <h2>Contact Section</h2>
-            <p>Edit contact section text and repeated business details.</p>
-          </div>
-          <button class="btn btn-primary" type="button" data-save-contact>Save Contact</button>
-        </div>
-        <div class="form-grid single">
-          <label>
-            Section title
-            <input type="text" data-homepage="contact.title">
-          </label>
-          <label>
-            Description
-            <textarea data-homepage="contact.description" rows="4"></textarea>
-          </label>
-          <label>
-            Phone
-            <input type="text" data-setting="business_phone">
-          </label>
-          <label>
-            Email
-            <input type="email" data-setting="business_email">
-          </label>
-          <label>
-            Business hours
-            <input type="text" data-setting="business_hours">
-          </label>
-          <label>
-            Service area
-            <input type="text" data-setting="service_area_description">
-          </label>
-        </div>
-      </section>
-
-      <section class="admin-card">
-        <div class="card-head">
-          <div>
-            <h2>Footer</h2>
-            <p>Edit footer copy and social links.</p>
-          </div>
-          <div class="card-actions">
-            <button class="btn btn-secondary" type="button" data-add-social>Add Social Link</button>
-            <button class="btn btn-primary" type="button" data-save-footer>Save Footer</button>
-          </div>
-        </div>
-        <div class="form-grid single">
-          <label>
-            Footer description
-            <textarea data-homepage="footer.description" rows="3"></textarea>
-          </label>
-          <label>
-            Copyright text
-            <input type="text" data-homepage="footer.copyright">
-          </label>
-          <label>
-            Phone
-            <input type="text" data-setting="business_phone">
-          </label>
-          <label>
-            Email
-            <input type="email" data-setting="business_email">
-          </label>
-        </div>
-        <div class="faq-list" data-social-list></div>
-      </section>
-
-      <section class="admin-card">
-        <div class="card-head">
-          <div>
-            <h2>Before / After Projects</h2>
-            <p>Manage before and after image pairs shown in the slider.</p>
-          </div>
-        </div>
-        <div class="faq-list" data-before-after-list></div>
-
-        <div class="card-head ba-add-head">
-          <div>
-            <h2>Add New Project</h2>
-          </div>
-          <button class="btn btn-primary" type="button" data-save-before-after>Save New Project</button>
-        </div>
-        <div class="ba-add-editor" data-ba-add-editor></div>
-        <div class="form-grid">
-          <label>
-            Before image
-            <input type="file" data-ba-before-file accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
-          </label>
-          <label>
-            After image
-            <input type="file" data-ba-after-file accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
-          </label>
-          <label>
-            Title
-            <input type="text" data-ba-title placeholder="Sectional Sofa Restoration">
-          </label>
-          <label class="toggle-label">
-            <input type="checkbox" data-ba-active checked>
-            Active
-          </label>
-        </div>
-        <p class="form-message" data-ba-message role="status" aria-live="polite"></p>
-      </section>
-
-      <section class="admin-card">
-        <div class="card-head">
-          <div>
-            <h2>FAQs</h2>
-            <p>Edit questions and answers shown on the public website.</p>
-          </div>
-          <div class="card-actions">
-            <button class="btn btn-secondary" type="button" data-add-faq>Add FAQ</button>
-            <button class="btn btn-primary" type="button" data-save-faqs>Save FAQs</button>
-          </div>
-        </div>
-        <div class="faq-list" data-faq-list></div>
       </section>
     </section>
-
-    <div class="icon-modal" data-icon-modal hidden>
-      <div class="icon-modal-backdrop" data-icon-cancel></div>
-      <section class="icon-modal-card" role="dialog" aria-modal="true" aria-labelledby="iconModalTitle">
-        <div class="card-head">
-          <div>
-            <p class="eyebrow">Why Choose Us</p>
-            <h2 id="iconModalTitle">Add icon</h2>
-          </div>
-        </div>
-        <div class="icon-dropzone" data-icon-dropzone>
-          <input type="file" data-icon-file accept=".svg,.png,.jpg,.jpeg,.webp,image/svg+xml,image/png,image/jpeg,image/webp" hidden>
-          <p>Drag and drop SVG, PNG, JPG, or WEBP here.</p>
-          <button class="btn btn-secondary" type="button" data-icon-choose>Choose file</button>
-        </div>
-        <div class="icon-preview" data-icon-preview>
-          <span>No icon selected</span>
-        </div>
-        <p class="form-message" data-icon-message role="status" aria-live="polite"></p>
-        <div class="modal-actions">
-          <button class="btn btn-secondary" type="button" data-icon-cancel>Cancel</button>
-          <button class="btn btn-primary" type="button" data-icon-insert>Insert icon</button>
-        </div>
-      </section>
-    </div>
   </main>
 </body>
 </html>
