@@ -451,6 +451,31 @@ const renderBeforeAfterVisual = (item, phase, title) => `
   </div>
 `;
 
+const beforeAfterPageItems = (total, current) => {
+  if (total <= 7) return Array.from({ length: total }, (_, index) => index);
+  const pages = [0];
+  const start = Math.max(1, current - 1);
+  const end = Math.min(total - 2, current + 1);
+  if (start > 1) pages.push("ellipsis-start");
+  for (let index = start; index <= end; index += 1) pages.push(index);
+  if (end < total - 2) pages.push("ellipsis-end");
+  pages.push(total - 1);
+  return pages;
+};
+
+const renderBeforeAfterPagination = (items, index) => {
+  const total = items.length;
+  if (!total) return "";
+  return `
+    <nav class="ba-pagination" aria-label="Before and after pair navigation">
+      <button class="ba-page-arrow" type="button" data-ba-prev ${index <= 0 ? "disabled" : ""} aria-label="Previous pair">&larr;</button>
+      ${beforeAfterPageItems(total, index).map((page) => typeof page === "string"
+        ? `<span class="ba-page-ellipsis" aria-hidden="true">&hellip;</span>`
+        : `<button class="ba-page-number ${page === index ? "is-active" : ""}" type="button" data-ba-page="${page}" ${page === index ? 'aria-current="page"' : ""}>${page + 1}</button>`).join("")}
+      <button class="ba-page-arrow" type="button" data-ba-next ${index >= total - 1 ? "disabled" : ""} aria-label="Next pair">&rarr;</button>
+    </nav>
+  `;
+};
 const renderBeforeAfterEditor = (section, items = []) => {
   const index = clampBeforeAfterIndex(section, items);
   const item = items[index] || { title: "New before and after", beforeSrc: "", beforeAlt: "", afterSrc: "", afterAlt: "" };
@@ -461,7 +486,10 @@ const renderBeforeAfterEditor = (section, items = []) => {
           <h3>Before / After</h3>
           <p>One pair at a time with large previews and framing controls.</p>
         </div>
-        <div class="ba-counter" data-ba-counter>Pair ${items.length ? index + 1 : 0} of ${items.length}</div>
+        <div class="ba-counter-wrap">
+          <div class="ba-counter" data-ba-counter>Pair ${items.length ? index + 1 : 0} of ${items.length}</div>
+          ${renderBeforeAfterPagination(items, index)}
+        </div>
         <div class="ba-toolbar-actions">
           <button class="btn btn-secondary" type="button" data-ba-prev ${index <= 0 ? "disabled" : ""}>Previous</button>
           <button class="btn btn-secondary" type="button" data-ba-next ${index >= items.length - 1 ? "disabled" : ""}>Next</button>
@@ -480,6 +508,9 @@ const renderBeforeAfterEditor = (section, items = []) => {
           <div class="ba-admin-grid">
             ${renderBeforeAfterVisual(item, "before", "Before")}
             ${renderBeforeAfterVisual(item, "after", "After")}
+          </div>
+          <div class="ba-live-tools">
+            <label class="ba-shared-control">Overall zoom <output>${escapeHtml(beforeAfterValue(item, "shared_zoom", beforeAfterValue(item, "zoom", 1)))}</output><input type="range" min="1" max="3" step="0.05" data-media-field="shared_zoom" value="${escapeHtml(beforeAfterValue(item, "shared_zoom", beforeAfterValue(item, "zoom", 1)))}"></label>
           </div>
           <div class="ba-public-preview" aria-label="Before and after public preview">
             <div class="ba-public-frame" data-ba-public-frame style="--ba-divider:50%;">
@@ -973,6 +1004,10 @@ sectionEditor.addEventListener("click", (event) => {
   }
   if (event.target.matches("[data-ba-next]")) {
     activeBeforeAfterIndexBySection[section.section_key] = Math.min(beforeAfterItems.length - 1, (activeBeforeAfterIndexBySection[section.section_key] || 0) + 1);
+    renderSectionEditor();
+  }
+  if (event.target.matches("[data-ba-page]")) {
+    activeBeforeAfterIndexBySection[section.section_key] = Number(event.target.dataset.baPage);
     renderSectionEditor();
   }
   if (event.target.matches("[data-ba-duplicate]") && beforeAfterItems.length) {

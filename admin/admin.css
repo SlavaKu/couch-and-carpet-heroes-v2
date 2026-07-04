@@ -196,6 +196,12 @@ input:focus, textarea:focus, select:focus {
   gap: 14px;
   align-items: start;
 }
+.ba-counter-wrap {
+  display: grid;
+  gap: 8px;
+  justify-items: end;
+  min-width: 0;
+}
 .ba-counter {
   align-self: center;
   justify-self: end;
@@ -213,6 +219,52 @@ input:focus, textarea:focus, select:focus {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
+}
+.ba-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  max-width: 100%;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+.ba-page-number,
+.ba-page-arrow,
+.ba-page-ellipsis {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-width: 34px;
+  height: 34px;
+  padding: 0 9px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 950;
+}
+.ba-page-number,
+.ba-page-arrow {
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--black);
+  cursor: pointer;
+}
+.ba-page-number.is-active {
+  border-color: var(--orange);
+  background: var(--orange);
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(255, 107, 22, .2);
+}
+.ba-page-number:disabled,
+.ba-page-arrow:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+.ba-page-ellipsis {
+  min-width: 24px;
+  padding: 0 4px;
+  color: var(--muted);
 }
 .ba-active-pair {
   display: grid;
@@ -232,7 +284,6 @@ input:focus, textarea:focus, select:focus {
 .ba-shared-control {
   flex: 1 1 280px;
   min-width: 240px;
-  margin-left: auto;
 }
 .ba-admin-grid {
   display: grid;
@@ -349,6 +400,18 @@ input:focus, textarea:focus, select:focus {
   font-size: 12px;
   font-weight: 950;
 }
+.ba-live-tools {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--soft);
+}
+.ba-live-tools .ba-shared-control {
+  width: 100%;
+  min-width: 0;
+}
 .ba-public-preview {
   display: grid;
   gap: 10px;
@@ -449,7 +512,10 @@ input:focus, textarea:focus, select:focus {
   .ba-admin-panel-head {
     grid-template-columns: 1fr;
   }
+  .ba-counter-wrap,
   .ba-counter { justify-self: start; }
+  .ba-counter-wrap { justify-items: start; }
+  .ba-pagination { justify-content: flex-start; width: 100%; }
   .ba-toolbar-actions,
   .ba-pair-actions {
     display: grid;
@@ -457,7 +523,6 @@ input:focus, textarea:focus, select:focus {
   }
   .ba-shared-control {
     min-width: 0;
-    margin-left: 0;
   }
   .ba-admin-image-frame,
   .ba-public-frame {
