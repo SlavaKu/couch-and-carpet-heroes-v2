@@ -118,7 +118,56 @@
     `).join("");
   };
 
+  const mediaSrc = (item, phase) => item[`${phase}Src`] || item[`${phase}_image_url`] || "";
+  const mediaAlt = (item, phase) => item[`${phase}Alt`] || item[`${phase}_alt`] || `${phase} cleaning image`;
+  const framingStyle = (item, phase) => {
+    const shared = Number(item.shared_zoom ?? item.zoom ?? 1) || 1;
+    const zoom = shared * (Number(item[`${phase}_zoom`]) || 1);
+    const x = Number(item[`${phase}_position_x`] ?? 50);
+    const y = Number(item[`${phase}_position_y`] ?? 50);
+    return `object-position: ${x}% ${y}%; transform: scale(${zoom}); transform-origin: ${x}% ${y}%;`;
+  };
+
+  const renderHomepageBeforeAfter = (section, items = []) => {
+    const carousel = section.querySelector("[data-ba-carousel]");
+    const slidesRoot = carousel?.querySelector(".ba-slides");
+    if (!carousel || !slidesRoot || !items.length) return;
+    slidesRoot.setAttribute("aria-busy", "false");
+    slidesRoot.innerHTML = items.map((item, index) => `
+      <article class="ba-slide ${index === 0 ? "is-active" : ""}" data-ba-slide>
+        <div class="ba-slider-card">
+          <div class="ba-slider" data-ba-slider style="--position: 50%; --position-num: .5;">
+            <img class="ba-slider-img" src="${escapeHtml(mediaSrc(item, "after"))}" alt="${escapeHtml(mediaAlt(item, "after"))}" loading="${index === 0 ? "eager" : "lazy"}" decoding="async" style="${framingStyle(item, "after")}">
+            <div class="ba-slider-after">
+              <img class="ba-slider-img" src="${escapeHtml(mediaSrc(item, "before"))}" alt="${escapeHtml(mediaAlt(item, "before"))}" loading="${index === 0 ? "eager" : "lazy"}" decoding="async" style="${framingStyle(item, "before")}">
+            </div>
+            <span class="ba-label ba-label-before">Before</span>
+            <span class="ba-label ba-label-after">After</span>
+            <div class="ba-divider" aria-hidden="true"></div>
+            <input class="ba-range" type="range" min="1" max="99" value="50" aria-label="Compare ${escapeHtml(item.title || "cleaning result")} before and after">
+          </div>
+          <div class="ba-title">${escapeHtml(item.title || item.caption || "Before & After Result")}</div>
+        </div>
+      </article>
+    `).join("");
+    carousel.querySelectorAll("[data-ba-slider]").forEach((slider) => {
+      const range = slider.querySelector(".ba-range");
+      if (!range) return;
+      const update = () => {
+        const value = Number(range.value);
+        slider.style.setProperty("--position", `${value}%`);
+        slider.style.setProperty("--position-num", String(value / 100));
+      };
+      range.addEventListener("input", update);
+      update();
+    });
+    window.initializeBeforeAfterCarousel?.(carousel);
+  };
+
   const applyMediaToSection = (section, media = {}) => {
+    if (media.beforeAfter?.length && section.querySelector("[data-ba-carousel]")) {
+      renderHomepageBeforeAfter(section, media.beforeAfter);
+    }
     if (media.beforeAfter?.length || media.gallery?.length || media.imageBreaks) {
       const payload = {
         beforeAfter: media.beforeAfter || window.servicePageMedia?.beforeAfter || [],

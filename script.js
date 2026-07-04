@@ -65,6 +65,8 @@ const initializeBeforeAfterCarousel = (carousel) => {
   showSlide(activeIndex);
 };
 
+window.initializeBeforeAfterCarousel = initializeBeforeAfterCarousel;
+
 document.querySelectorAll("[data-ba-slider]").forEach(initializeBeforeAfterSlider);
 document.querySelectorAll("[data-ba-carousel]").forEach(initializeBeforeAfterCarousel);
 

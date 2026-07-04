@@ -109,6 +109,67 @@ input:focus, textarea:focus, select:focus {
 }
 .media-row { align-items: center; padding: 12px; border: 1px solid var(--line); border-radius: 14px; background: #fff; }
 .media-row .form-grid { flex: 1; }
+.media-row-stack { display: grid; grid-template-columns: minmax(220px, 320px) minmax(0, 1fr) auto; }
+.media-preview-card,
+.ba-visual-editor {
+  display: grid;
+  gap: 12px;
+}
+.ba-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.ba-preview-grid figure {
+  margin: 0;
+}
+.ba-preview-grid figcaption {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+.ba-live-preview {
+  position: relative;
+  aspect-ratio: 1.25 / .78;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #e5e7eb;
+}
+.ba-live-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.ba-live-preview span {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: rgba(16, 16, 16, .72);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 900;
+}
+.file-action {
+  display: inline-flex;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 12px;
+  background: #fff;
+  color: var(--black);
+  cursor: pointer;
+}
+.file-action input {
+  margin-top: 8px;
+  padding: 0;
+  border: 0;
+}
 .faq-editor { padding: 12px; border: 1px solid var(--line); border-radius: 14px; background: #fff; }
 .small-note { font-size: 13px; color: var(--muted); font-weight: 700; }
 @media (max-width: 980px) {
@@ -119,6 +180,7 @@ input:focus, textarea:focus, select:focus {
   .admin-shell { width: min(100% - 24px, 1440px); padding: 24px 0; }
   .login-panel, .admin-card { border-radius: 16px; padding: 20px; }
   .admin-header, .card-head, .field-row, .media-row { display: grid; }
+  .media-row-stack { grid-template-columns: 1fr; }
   .toolbar-grid, .form-grid { grid-template-columns: 1fr; }
   .header-actions, .card-actions, .row-actions { display: grid; justify-content: stretch; }
   .btn { width: 100%; }
