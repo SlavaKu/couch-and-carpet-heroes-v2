@@ -191,7 +191,19 @@ const extractMedia = (section) => {
 };
 
 const extractServiceMedia = (html) => {
-  const match = html.match(/window\.servicePageMedia\s*=\s*({[\s\S]*?});\s*<\/script>/);
+  const inlineMatch = html.match(/window\.servicePageMedia\s*=\s*({[\s\S]*?});\s*<\/script>/);
+  const carpetMatch = html.match(/const\s+carpetCleaningMedia\s*=\s*({[\s\S]*?});\s*const\s+defaultServicePageMedia/);
+  const mediaMatch = inlineMatch || carpetMatch;
+  if (!mediaMatch) return {};
+  try {
+    return Function(`"use strict"; return (${mediaMatch[1]});`)();
+  } catch {
+    return {};
+  }
+};
+
+const extractServiceComponentConfig = (html) => {
+  const match = html.match(/window\.servicePageComponentConfig\s*=\s*({[\s\S]*?});\s*window\.servicePageMedia/);
   if (!match) return {};
   try {
     return Function(`"use strict"; return (${match[1]});`)();
@@ -237,7 +249,15 @@ const extractPageModel = async (page) => {
   if (!response.ok) throw new Error(`Could not fetch ${page.title}`);
   const html = await response.text();
   const doc = new DOMParser().parseFromString(html, "text/html");
-  const serviceMedia = extractServiceMedia(html);
+  let serviceMedia = extractServiceMedia(html);
+  if (page.page_key === "carpet-cleaning" && !serviceMedia.beforeAfter?.length) {
+    try {
+      const mediaResponse = await fetch("../carpet-cleaning/service-page-components.js");
+      if (mediaResponse.ok) serviceMedia = extractServiceMedia(await mediaResponse.text());
+    } catch {}
+  }
+  const serviceConfig = extractServiceComponentConfig(html);
+  const isServicePage = page.page_key !== "home";
   const mainSections = Array.from(doc.querySelectorAll("main > section"));
   const extractedSections = mainSections.map((section, index) => {
     const label = section.querySelector("h1,h2,h3")?.textContent.trim() || `Section ${index + 1}`;
@@ -260,7 +280,7 @@ const extractPageModel = async (page) => {
       fields[`image.${imageIndex}.alt`] = { label: `Image ${imageIndex + 1} Alt Text`, value: node.getAttribute("alt") || "" };
     });
     const media = extractMedia(section);
-    if ((type === "before_after" || section.querySelector("[data-service-before-after-root]")) && serviceMedia.beforeAfter) media.beforeAfter = serviceMedia.beforeAfter;
+    if (type === "before_after" && serviceMedia.beforeAfter) media.beforeAfter = serviceMedia.beforeAfter;
     if (section.querySelector("[data-ba-carousel]")) media.beforeAfter = homeBeforeAfterFallback;
     if (type === "gallery" && serviceMedia.gallery) media.gallery = serviceMedia.gallery;
     if (section.querySelector("[data-service-image-break]") && serviceMedia.imageBreaks) media.imageBreaks = serviceMedia.imageBreaks;
@@ -279,6 +299,23 @@ const extractPageModel = async (page) => {
   });
 
   const footer = doc.querySelector("footer");
+  if (isServicePage && serviceMedia.beforeAfter?.length && !extractedSections.some((section) => section.section_type === "before_after")) {
+    extractedSections.splice(1, 0, {
+      section_key: "02-before-after",
+      section_type: "before_after",
+      label: serviceConfig.beforeAfterTitle || "Before / After",
+      sort_order: 15,
+      is_visible: true,
+      content: {
+        fields: {
+          "text.0": { label: "Section Title", value: serviceConfig.beforeAfterTitle || "Before / After" },
+          "text.1": { label: "Description", value: serviceConfig.beforeAfterDescription || "Before and after cleaning examples." }
+        },
+        faqs: [],
+        media: { beforeAfter: serviceMedia.beforeAfter }
+      }
+    });
+  }
   if (footer) {
     const fields = {};
     textNodes(footer).forEach((node, index) => {
@@ -686,6 +723,33 @@ const renderSeo = () => {
   schemaInput.value = JSON.stringify(currentPage?.schema_json || {}, null, 2);
 };
 
+const mergeServiceSectionsWithPublicModel = (cmsRows = [], publicRows = []) => {
+  const existingByKey = new Map(cmsRows.map((section) => [section.section_key, section]));
+  const merged = publicRows.map((publicSection, index) => {
+    const existing = existingByKey.get(publicSection.section_key);
+    if (!existing) return { ...publicSection, sort_order: (index + 1) * 10 };
+    existingByKey.delete(publicSection.section_key);
+    const content = { ...(publicSection.content || {}), ...(existing.content || {}) };
+    const publicMedia = publicSection.content?.media || {};
+    const existingMedia = existing.content?.media || {};
+    content.media = { ...publicMedia, ...existingMedia };
+    if (publicMedia.beforeAfter?.length && !existingMedia.beforeAfter?.length) content.media.beforeAfter = publicMedia.beforeAfter;
+    if (publicMedia.gallery?.length && !existingMedia.gallery?.length) content.media.gallery = publicMedia.gallery;
+    if (publicMedia.imageBreaks && !Object.keys(existingMedia.imageBreaks || {}).length) content.media.imageBreaks = publicMedia.imageBreaks;
+    return {
+      ...publicSection,
+      ...existing,
+      section_type: publicSection.section_type,
+      label: existing.label || publicSection.label,
+      sort_order: (index + 1) * 10,
+      content
+    };
+  });
+  existingByKey.forEach((section) => {
+    merged.push({ ...section, sort_order: (merged.length + 1) * 10 });
+  });
+  return merged;
+};
 const renderAll = () => {
   renderPageOptions();
   renderSeo();
@@ -712,9 +776,14 @@ const loadPageFromCms = async (pageKey) => {
     const sectionRows = await cmsRequest("cms_sections", `?page_key=eq.${encodeURIComponent(pageKey)}&select=section_key,section_type,label,sort_order,is_visible,content&order=sort_order.asc`);
     if (pageRows?.[0] && sectionRows?.length) {
       currentPage = { ...page, ...pageRows[0] };
-      sections = sectionRows;
+      if (pageKey === "home") {
+        sections = sectionRows;
+      } else {
+        const publicModel = await extractPageModel(page);
+        sections = mergeServiceSectionsWithPublicModel(sectionRows, publicModel.sections);
+      }
       activeSectionKey = sections[0]?.section_key || null;
-      setMessage(statusMessage, "Loaded from Supabase.", "success");
+      setMessage(statusMessage, pageKey === "home" ? "Loaded from Supabase." : "Loaded from Supabase and synced with the current public page structure.", "success");
     } else {
       await loadDefaultsFromSite(false);
       setMessage(statusMessage, "Loaded current site defaults. Save to publish CMS-managed content.", "success");

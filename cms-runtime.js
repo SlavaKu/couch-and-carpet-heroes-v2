@@ -164,19 +164,22 @@
     window.initializeBeforeAfterCarousel?.(carousel);
   };
 
+  const applyServicePageMedia = (media = {}) => {
+    if (!(media.beforeAfter?.length || media.gallery?.length || media.imageBreaks)) return;
+    const payload = {
+      beforeAfter: media.beforeAfter || window.cmsServicePageMedia?.beforeAfter || window.servicePageMedia?.beforeAfter || [],
+      gallery: media.gallery || window.cmsServicePageMedia?.gallery || window.servicePageMedia?.gallery || [],
+      imageBreaks: media.imageBreaks || window.cmsServicePageMedia?.imageBreaks || window.servicePageMedia?.imageBreaks || {}
+    };
+    window.cmsServicePageMedia = payload;
+    window.renderServicePageMedia?.(payload);
+  };
+
   const applyMediaToSection = (section, media = {}) => {
     if (media.beforeAfter?.length && section.querySelector("[data-ba-carousel]")) {
       renderHomepageBeforeAfter(section, media.beforeAfter);
     }
-    if (media.beforeAfter?.length || media.gallery?.length || media.imageBreaks) {
-      const payload = {
-        beforeAfter: media.beforeAfter || window.servicePageMedia?.beforeAfter || [],
-        gallery: media.gallery || window.servicePageMedia?.gallery || [],
-        imageBreaks: media.imageBreaks || window.servicePageMedia?.imageBreaks || {}
-      };
-      window.cmsServicePageMedia = payload;
-      window.renderServicePageMedia?.(payload);
-    }
+    applyServicePageMedia(media);
 
     (media.images || []).forEach((item, index) => {
       const img = editableImages(section)[index];
@@ -244,6 +247,10 @@
       const source = row.content?.duplicate_of ? byKey.get(row.content.duplicate_of) : original;
       if (!main) return;
       if (!original && row.section_key === "footer") return;
+      if (!original && row.section_type === "before_after" && row.content?.media?.beforeAfter?.length) {
+        applyServicePageMedia(row.content.media);
+        return;
+      }
       const section = row.content?.duplicate_of && source ? source.cloneNode(true) : source;
       const resolvedSection = section || createGenericSection(row);
       if (row.content?.duplicate_of) resolvedSection.dataset.cmsSection = row.section_key;
