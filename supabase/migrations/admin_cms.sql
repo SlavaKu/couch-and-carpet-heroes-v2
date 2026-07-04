@@ -115,30 +115,31 @@ on conflict (page_key) do update set
   sort_order = excluded.sort_order;
 
 insert into storage.buckets (id, name, public)
-values ('cms-media', 'cms-media', true)
+values ('before-after', 'before-after', true)
 on conflict (id) do nothing;
 
 drop policy if exists "Public can read CMS media" on storage.objects;
 create policy "Public can read CMS media"
 on storage.objects for select
 to anon, authenticated
-using (bucket_id = 'cms-media');
+using (bucket_id = 'before-after');
 
 drop policy if exists "Authenticated users upload CMS media" on storage.objects;
 create policy "Authenticated users upload CMS media"
 on storage.objects for insert
 to authenticated
-with check (bucket_id = 'cms-media');
+with check (bucket_id = 'before-after');
 
 drop policy if exists "Authenticated users update CMS media" on storage.objects;
 create policy "Authenticated users update CMS media"
 on storage.objects for update
 to authenticated
-using (bucket_id = 'cms-media')
-with check (bucket_id = 'cms-media');
+using (bucket_id = 'before-after')
+with check (bucket_id = 'before-after');
 
 drop policy if exists "Authenticated users delete CMS media" on storage.objects;
 create policy "Authenticated users delete CMS media"
 on storage.objects for delete
 to authenticated
-using (bucket_id = 'cms-media');
+using (bucket_id = 'before-after');
+
