@@ -2,6 +2,7 @@ const SUPABASE_URL = "https://gxtrpycepqnecoyxnonl.supabase.co";
 const SUPABASE_REST_URL = "https://gxtrpycepqnecoyxnonl.supabase.co/rest/v1";
 const SUPABASE_KEY = "sb_publishable_Sx1dm7TzcIntHfB6lrFctA_xoKF_EYU";
 const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const STORAGE_BUCKET = "before-after";
 
 const pageFallbacks = [
   { page_key: "home", title: "Home", path: "../" },
@@ -695,14 +696,14 @@ const loadDefaultsFromSite = async (markDirty = true) => {
 
 const uploadMedia = async (file) => {
   const ext = file.name.split(".").pop() || "jpg";
-  const path = `${currentPageKey}/${Date.now()}-${Math.random().toString(16).slice(2)}.${ext}`;
-  const { error } = await client.storage.from("cms-media").upload(path, file, {
+  const path = `before-after/${currentPageKey}-${Date.now()}-${Math.random().toString(16).slice(2)}.${ext}`;
+  const { error } = await client.storage.from(STORAGE_BUCKET).upload(path, file, {
     cacheControl: "31536000",
     upsert: false,
     contentType: file.type || undefined
   });
   if (error) throw error;
-  const { data } = client.storage.from("cms-media").getPublicUrl(path);
+  const { data } = client.storage.from(STORAGE_BUCKET).getPublicUrl(path);
   return data.publicUrl;
 };
 
