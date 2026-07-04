@@ -414,7 +414,9 @@ const beforeAfterStyle = (item, phase) => {
   const phaseZoom = Number(item[`${phase}_zoom`] ?? 1) || 1;
   const x = Number(item[`${phase}_position_x`] ?? 50);
   const y = Number(item[`${phase}_position_y`] ?? 50);
-  return `object-position:${x}% ${y}%; transform:scale(${shared * phaseZoom}); transform-origin:${x}% ${y}%;`;
+  const offsetX = (50 - x) * 1.4;
+  const offsetY = (50 - y) * 1.4;
+  return `--ba-scale:${shared * phaseZoom}; --ba-x:${offsetX}%; --ba-y:${offsetY}%; object-position:${x}% ${y}%; transform:translate(var(--ba-x), var(--ba-y)) scale(var(--ba-scale)); transform-origin:center center;`;
 };
 const clampBeforeAfterIndex = (section, items) => {
   const key = section.section_key;
@@ -433,13 +435,13 @@ const renderBeforeAfterVisual = (item, phase, title) => `
         <input type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" ${phase === "before" ? "data-media-upload-before" : "data-media-upload-after"}>
       </label>
     </div>
-    <div class="ba-admin-image-frame">
-      <img data-ba-preview-image="${phase}" src="${escapeHtml(beforeAfterImage(item, phase))}" alt="" style="${beforeAfterStyle(item, phase)}">
-    </div>
     <div class="ba-admin-fields">
       <label>Image URL<input data-media-field="${phase === "before" ? "src" : "afterSrc"}" data-media-url-input="${phase}" value="${escapeHtml(beforeAfterImage(item, phase))}" placeholder="Paste or upload an image"></label>
       <label>Caption<input data-media-field="${phase === "before" ? "beforeCaption" : "afterCaption"}" value="${escapeHtml(item[`${phase}Caption`] || item.caption || item.title || "")}"></label>
       <label>Alt text<input data-media-field="${phase === "before" ? "alt" : "afterAlt"}" value="${escapeHtml(beforeAfterAlt(item, phase))}"></label>
+    </div>
+    <div class="ba-admin-image-frame">
+      <img data-ba-preview-image="${phase}" src="${escapeHtml(beforeAfterImage(item, phase))}" alt="" style="${beforeAfterStyle(item, phase)}">
     </div>
     <div class="ba-admin-sliders">
       <label>${title} zoom <output>${escapeHtml(beforeAfterValue(item, `${phase}_zoom`, 1))}</output><input type="range" min="1" max="3" step="0.05" data-media-field="${phase}_zoom" value="${escapeHtml(beforeAfterValue(item, `${phase}_zoom`, 1))}"></label>
@@ -480,7 +482,7 @@ const renderBeforeAfterEditor = (section, items = []) => {
             ${renderBeforeAfterVisual(item, "after", "After")}
           </div>
           <div class="ba-public-preview" aria-label="Before and after public preview">
-            <div class="ba-public-frame">
+            <div class="ba-public-frame" data-ba-public-frame style="--ba-divider:50%;">
               <img data-ba-preview-image="after" src="${escapeHtml(beforeAfterImage(item, "after"))}" alt="" style="${beforeAfterStyle(item, "after")}">
               <div class="ba-public-before">
                 <img data-ba-preview-image="before" src="${escapeHtml(beforeAfterImage(item, "before"))}" alt="" style="${beforeAfterStyle(item, "before")}">
@@ -488,6 +490,7 @@ const renderBeforeAfterEditor = (section, items = []) => {
               <span class="ba-label-before">Before</span>
               <span class="ba-label-after">After</span>
               <span class="ba-public-divider"></span>
+              <button class="ba-public-handle" type="button" aria-label="Drag before after divider" data-ba-divider-handle></button>
             </div>
             <p>${escapeHtml(item.title || item.caption || item.beforeCaption || item.afterCaption || "Before / After preview")}</p>
           </div>
@@ -497,6 +500,12 @@ const renderBeforeAfterEditor = (section, items = []) => {
   `;
 };
 
+const updateBeforeAfterDivider = (frame, clientX) => {
+  const rect = frame.getBoundingClientRect();
+  if (!rect.width) return;
+  const percent = Math.min(95, Math.max(5, ((clientX - rect.left) / rect.width) * 100));
+  frame.style.setProperty("--ba-divider", `${percent}%`);
+};
 const updateBeforeAfterPreview = (row, item) => {
   if (!row || !item) return;
   ["before", "after"].forEach((phase) => {
@@ -856,6 +865,23 @@ sectionEditor.addEventListener("input", async (event) => {
   }
 });
 
+sectionEditor.addEventListener("pointerdown", (event) => {
+  const handle = event.target.closest("[data-ba-divider-handle]");
+  const frame = handle?.closest("[data-ba-public-frame]");
+  if (!frame) return;
+  event.preventDefault();
+  handle.setPointerCapture?.(event.pointerId);
+  updateBeforeAfterDivider(frame, event.clientX);
+  const move = (moveEvent) => updateBeforeAfterDivider(frame, moveEvent.clientX);
+  const stop = () => {
+    window.removeEventListener("pointermove", move);
+    window.removeEventListener("pointerup", stop);
+    window.removeEventListener("pointercancel", stop);
+  };
+  window.addEventListener("pointermove", move);
+  window.addEventListener("pointerup", stop, { once: true });
+  window.addEventListener("pointercancel", stop, { once: true });
+});
 sectionEditor.addEventListener("change", async (event) => {
   const section = activeSection();
   if (!section) return;
