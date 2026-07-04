@@ -29,6 +29,7 @@ let currentPage = null;
 let sections = [];
 let activeSectionKey = null;
 let dirty = false;
+const activeBeforeAfterIndexBySection = {};
 
 const setMessage = (node, text = "", type = "") => {
   node.textContent = text;
@@ -400,6 +401,113 @@ const renderFaqEditor = (section) => {
   `;
 };
 
+const beforeAfterValue = (item, key, fallback) => item[key] ?? fallback;
+const beforeAfterImage = (item, phase) => phase === "before"
+  ? (item.beforeSrc || item.src || "")
+  : (item.afterSrc || "");
+const beforeAfterAlt = (item, phase) => phase === "before"
+  ? (item.beforeAlt || item.alt || "")
+  : (item.afterAlt || "");
+const beforeAfterStyle = (item, phase) => {
+  const shared = Number(item.shared_zoom ?? item.zoom ?? 1) || 1;
+  const phaseZoom = Number(item[`${phase}_zoom`] ?? 1) || 1;
+  const x = Number(item[`${phase}_position_x`] ?? 50);
+  const y = Number(item[`${phase}_position_y`] ?? 50);
+  return `object-position:${x}% ${y}%; transform:scale(${shared * phaseZoom}); transform-origin:${x}% ${y}%;`;
+};
+const clampBeforeAfterIndex = (section, items) => {
+  const key = section.section_key;
+  const current = activeBeforeAfterIndexBySection[key] ?? 0;
+  const max = Math.max(0, items.length - 1);
+  activeBeforeAfterIndexBySection[key] = Math.min(Math.max(0, current), max);
+  return activeBeforeAfterIndexBySection[key];
+};
+
+const renderBeforeAfterVisual = (item, phase, title) => `
+  <div class="ba-admin-image-panel ba-admin-${phase}">
+    <div class="ba-admin-panel-head">
+      <h4>${title}</h4>
+      <label class="file-action ba-file-action">Replace ${phase}<input type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" ${phase === "before" ? "data-media-upload-before" : "data-media-upload-after"}></label>
+    </div>
+    <div class="ba-admin-image-frame">
+      <img data-ba-preview-image="${phase}" src="${escapeHtml(beforeAfterImage(item, phase))}" alt="" style="${beforeAfterStyle(item, phase)}">
+    </div>
+    <div class="ba-admin-fields">
+      <label>${title} image<input data-media-field="${phase === "before" ? "src" : "afterSrc"}" value="${escapeHtml(beforeAfterImage(item, phase))}" placeholder="Image URL"></label>
+      <label>${title} caption<input data-media-field="${phase === "before" ? "beforeCaption" : "afterCaption"}" value="${escapeHtml(item[`${phase}Caption`] || item.caption || item.title || "")}"></label>
+      <label>${title} alt text<input data-media-field="${phase === "before" ? "alt" : "afterAlt"}" value="${escapeHtml(beforeAfterAlt(item, phase))}"></label>
+    </div>
+    <div class="ba-admin-sliders">
+      <label>${title} zoom <output>${escapeHtml(beforeAfterValue(item, `${phase}_zoom`, 1))}</output><input type="range" min="1" max="3" step="0.05" data-media-field="${phase}_zoom" value="${escapeHtml(beforeAfterValue(item, `${phase}_zoom`, 1))}"></label>
+      <label>${title} horizontal position <output>${escapeHtml(beforeAfterValue(item, `${phase}_position_x`, 50))}</output><input type="range" min="0" max="100" step="1" data-media-field="${phase}_position_x" value="${escapeHtml(beforeAfterValue(item, `${phase}_position_x`, 50))}"></label>
+      <label>${title} vertical position <output>${escapeHtml(beforeAfterValue(item, `${phase}_position_y`, 50))}</output><input type="range" min="0" max="100" step="1" data-media-field="${phase}_position_y" value="${escapeHtml(beforeAfterValue(item, `${phase}_position_y`, 50))}"></label>
+    </div>
+  </div>
+`;
+
+const renderBeforeAfterEditor = (section, items = []) => {
+  const index = clampBeforeAfterIndex(section, items);
+  const item = items[index] || { title: "New before and after", beforeSrc: "", beforeAlt: "", afterSrc: "", afterAlt: "" };
+  return `
+    <div class="subpanel media-editor ba-carousel-editor" data-before-after-editor>
+      <div class="ba-editor-toolbar">
+        <div>
+          <h3>Before / After</h3>
+          <p>One pair at a time with large previews and framing controls.</p>
+        </div>
+        <div class="ba-counter" data-ba-counter>Pair ${items.length ? index + 1 : 0} of ${items.length}</div>
+        <div class="ba-toolbar-actions">
+          <button class="btn btn-secondary" type="button" data-ba-prev ${index <= 0 ? "disabled" : ""}>Previous</button>
+          <button class="btn btn-secondary" type="button" data-ba-next ${index >= items.length - 1 ? "disabled" : ""}>Next</button>
+          <button class="btn btn-secondary" type="button" data-add-media="beforeAfter">Add Pair</button>
+          <button class="btn btn-secondary" type="button" data-ba-duplicate ${!items.length ? "disabled" : ""}>Duplicate Pair</button>
+          <button class="btn btn-danger" type="button" data-media-delete ${!items.length ? "disabled" : ""}>Delete Pair</button>
+        </div>
+      </div>
+      ${items.length ? `
+        <div class="ba-active-pair" data-media-kind="beforeAfter" data-media-index="${index}">
+          <div class="ba-pair-actions">
+            <button class="btn btn-secondary" type="button" data-media-up ${index <= 0 ? "disabled" : ""}>Move Earlier</button>
+            <button class="btn btn-secondary" type="button" data-media-down ${index >= items.length - 1 ? "disabled" : ""}>Move Later</button>
+            <label class="ba-shared-control">Overall zoom <output>${escapeHtml(beforeAfterValue(item, "shared_zoom", beforeAfterValue(item, "zoom", 1)))}</output><input type="range" min="1" max="3" step="0.05" data-media-field="shared_zoom" value="${escapeHtml(beforeAfterValue(item, "shared_zoom", beforeAfterValue(item, "zoom", 1)))}"></label>
+          </div>
+          <div class="ba-admin-grid">
+            ${renderBeforeAfterVisual(item, "before", "Before")}
+            ${renderBeforeAfterVisual(item, "after", "After")}
+          </div>
+          <div class="ba-public-preview" aria-label="Before and after public preview">
+            <div class="ba-public-frame">
+              <img data-ba-preview-image="after" src="${escapeHtml(beforeAfterImage(item, "after"))}" alt="" style="${beforeAfterStyle(item, "after")}">
+              <div class="ba-public-before">
+                <img data-ba-preview-image="before" src="${escapeHtml(beforeAfterImage(item, "before"))}" alt="" style="${beforeAfterStyle(item, "before")}">
+              </div>
+              <span class="ba-label-before">Before</span>
+              <span class="ba-label-after">After</span>
+              <span class="ba-public-divider"></span>
+            </div>
+            <p>${escapeHtml(item.title || item.caption || item.beforeCaption || item.afterCaption || "Before / After preview")}</p>
+          </div>
+        </div>
+      ` : `<div class="empty-state">No before/after pairs yet. Add a pair to start.</div>`}
+    </div>
+  `;
+};
+
+const updateBeforeAfterPreview = (row, item) => {
+  if (!row || !item) return;
+  ["before", "after"].forEach((phase) => {
+    const src = beforeAfterImage(item, phase);
+    const style = beforeAfterStyle(item, phase);
+    row.querySelectorAll(`[data-ba-preview-image="${phase}"]`).forEach((img) => {
+      img.src = src;
+      img.setAttribute("style", style);
+    });
+  });
+  row.querySelectorAll("input[type='range']").forEach((input) => {
+    const output = input.closest("label")?.querySelector("output");
+    if (output) output.textContent = input.value;
+  });
+};
 const mediaItemEditor = (kind, item, index) => {
   const src = item.src || item.beforeSrc || "";
   const alt = item.alt || item.beforeAlt || "";
@@ -460,12 +568,7 @@ const renderMediaEditor = (section) => {
   const media = section.content.media || {};
   const blocks = [];
   if (section.section_type === "before_after" || media.beforeAfter?.length) {
-    blocks.push(`
-      <div class="subpanel media-editor">
-        <div class="card-head compact"><div><h3>Before / After</h3><p>Upload, replace, reorder, captions and alt text.</p></div><button class="btn btn-secondary" type="button" data-add-media="beforeAfter">Add Pair</button></div>
-        ${(media.beforeAfter || []).map((item, index) => mediaItemEditor("beforeAfter", item, index)).join("")}
-      </div>
-    `);
+    blocks.push(renderBeforeAfterEditor(section, media.beforeAfter || []));
   }
   if (section.section_type === "gallery" || media.gallery?.length) {
     blocks.push(`
@@ -736,6 +839,9 @@ sectionEditor.addEventListener("input", async (event) => {
     else collection[index][mediaField] = value;
     if (mediaField === "title" && kind === "gallery") collection[index].caption = value;
     if (mediaField === "title" && kind === "beforeAfter") collection[index].caption = value;
+    if (mediaField === "beforeCaption" && kind === "beforeAfter") collection[index].caption = value;
+    if (mediaField === "afterCaption" && kind === "beforeAfter" && !collection[index].caption) collection[index].caption = value;
+    if (kind === "beforeAfter") updateBeforeAfterPreview(row, collection[index]);
     setDirty();
   }
   const imageBreakField = event.target.dataset.imageBreakField;
@@ -755,13 +861,18 @@ sectionEditor.addEventListener("change", async (event) => {
     renderSections();
   }
   if ((event.target.matches("[data-media-upload]") || event.target.matches("[data-media-upload-before]") || event.target.matches("[data-media-upload-after]")) && event.target.files?.[0]) {
+    const row = event.target.closest("[data-media-kind]");
+    const kind = row.dataset.mediaKind;
+    const index = Number(row.dataset.mediaIndex);
+    const collection = kind === "images" ? section.content.media.images : section.content.media[kind];
+    if (kind === "beforeAfter") {
+      const phase = event.target.matches("[data-media-upload-after]") ? "after" : "before";
+      const localUrl = URL.createObjectURL(event.target.files[0]);
+      row.querySelectorAll(`[data-ba-preview-image="${phase}"]`).forEach((img) => { img.src = localUrl; });
+    }
     setMessage(statusMessage, "Uploading image...");
     try {
       const url = await uploadMedia(event.target.files[0]);
-      const row = event.target.closest("[data-media-kind]");
-      const kind = row.dataset.mediaKind;
-      const index = Number(row.dataset.mediaIndex);
-      const collection = kind === "images" ? section.content.media.images : section.content.media[kind];
       if (event.target.matches("[data-media-upload-before]")) collection[index].beforeSrc = url;
       else if (event.target.matches("[data-media-upload-after]")) collection[index].afterSrc = url;
       else if (kind === "beforeAfter" && !collection[index].beforeSrc) collection[index].beforeSrc = url;
@@ -814,8 +925,32 @@ sectionEditor.addEventListener("click", (event) => {
     section.content.media = section.content.media || {};
     section.content.media[addMedia] = section.content.media[addMedia] || [];
     section.content.media[addMedia].push(addMedia === "beforeAfter"
-      ? { title: "New before and after", beforeSrc: "", beforeAlt: "", afterSrc: "", afterAlt: "" }
+      ? { title: "New before and after", beforeSrc: "", beforeAlt: "", afterSrc: "", afterAlt: "", shared_zoom: 1, before_zoom: 1, after_zoom: 1, before_position_x: 50, before_position_y: 50, after_position_x: 50, after_position_y: 50 }
       : { src: "", alt: "", caption: "New gallery image" });
+    if (addMedia === "beforeAfter") activeBeforeAfterIndexBySection[section.section_key] = section.content.media[addMedia].length - 1;
+    setDirty(); renderSectionEditor();
+  }
+  const beforeAfterItems = section.content.media?.beforeAfter || [];
+  if (event.target.matches("[data-ba-prev]")) {
+    activeBeforeAfterIndexBySection[section.section_key] = Math.max(0, (activeBeforeAfterIndexBySection[section.section_key] || 0) - 1);
+    renderSectionEditor();
+  }
+  if (event.target.matches("[data-ba-next]")) {
+    activeBeforeAfterIndexBySection[section.section_key] = Math.min(beforeAfterItems.length - 1, (activeBeforeAfterIndexBySection[section.section_key] || 0) + 1);
+    renderSectionEditor();
+  }
+  if (event.target.matches("[data-ba-duplicate]") && beforeAfterItems.length) {
+    const index = clampBeforeAfterIndex(section, beforeAfterItems);
+    const copy = JSON.parse(JSON.stringify(beforeAfterItems[index]));
+    copy.title = `${copy.title || copy.caption || "Before and after"} Copy`;
+    beforeAfterItems.splice(index + 1, 0, copy);
+    activeBeforeAfterIndexBySection[section.section_key] = index + 1;
+    setDirty(); renderSectionEditor();
+  }
+  if (event.target.matches("[data-media-delete]") && event.target.closest("[data-before-after-editor]") && !event.target.closest("[data-media-kind]")) {
+    const index = clampBeforeAfterIndex(section, beforeAfterItems);
+    beforeAfterItems.splice(index, 1);
+    activeBeforeAfterIndexBySection[section.section_key] = Math.max(0, Math.min(index, beforeAfterItems.length - 1));
     setDirty(); renderSectionEditor();
   }
   const mediaRow = event.target.closest("[data-media-kind]");
@@ -823,9 +958,18 @@ sectionEditor.addEventListener("click", (event) => {
     const kind = mediaRow.dataset.mediaKind;
     const index = Number(mediaRow.dataset.mediaIndex);
     const collection = kind === "images" ? section.content.media.images : section.content.media[kind];
-    if (event.target.matches("[data-media-up]")) moveItem(collection, index, -1);
-    if (event.target.matches("[data-media-down]")) moveItem(collection, index, 1);
-    if (event.target.matches("[data-media-delete]")) collection.splice(index, 1);
+    if (event.target.matches("[data-media-up]")) {
+      moveItem(collection, index, -1);
+      if (kind === "beforeAfter") activeBeforeAfterIndexBySection[section.section_key] = Math.max(0, index - 1);
+    }
+    if (event.target.matches("[data-media-down]")) {
+      moveItem(collection, index, 1);
+      if (kind === "beforeAfter") activeBeforeAfterIndexBySection[section.section_key] = Math.min(collection.length - 1, index + 1);
+    }
+    if (event.target.matches("[data-media-delete]")) {
+      collection.splice(index, 1);
+      if (kind === "beforeAfter") activeBeforeAfterIndexBySection[section.section_key] = Math.max(0, Math.min(index, collection.length - 1));
+    }
     setDirty(); renderSectionEditor();
   }
 });
@@ -890,3 +1034,4 @@ const showApp = async () => {
 client.auth.getSession().then(({ data }) => {
   if (data.session) showApp();
 });
+
