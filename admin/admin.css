@@ -260,6 +260,34 @@ input:focus, textarea:focus, select:focus {
   font-size: 17px;
   line-height: 1.2;
 }
+.ba-upload-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--orange);
+  border-radius: 999px;
+  background: var(--orange);
+  color: #fff;
+  cursor: pointer;
+  font-weight: 950;
+  text-align: center;
+  box-shadow: 0 10px 22px rgba(255, 107, 22, .18);
+}
+.ba-upload-button:hover {
+  background: var(--orange-dark);
+  border-color: var(--orange-dark);
+}
+.ba-upload-button input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
 .ba-file-action {
   min-height: 42px;
   align-items: center;

@@ -427,16 +427,19 @@ const clampBeforeAfterIndex = (section, items) => {
 const renderBeforeAfterVisual = (item, phase, title) => `
   <div class="ba-admin-image-panel ba-admin-${phase}">
     <div class="ba-admin-panel-head">
-      <h4>${title}</h4>
-      <label class="file-action ba-file-action">Replace ${phase}<input type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" ${phase === "before" ? "data-media-upload-before" : "data-media-upload-after"}></label>
+      <h4>${title} image</h4>
+      <label class="ba-upload-button">
+        Upload / Replace ${title}
+        <input type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" ${phase === "before" ? "data-media-upload-before" : "data-media-upload-after"}>
+      </label>
     </div>
     <div class="ba-admin-image-frame">
       <img data-ba-preview-image="${phase}" src="${escapeHtml(beforeAfterImage(item, phase))}" alt="" style="${beforeAfterStyle(item, phase)}">
     </div>
     <div class="ba-admin-fields">
-      <label>${title} image<input data-media-field="${phase === "before" ? "src" : "afterSrc"}" value="${escapeHtml(beforeAfterImage(item, phase))}" placeholder="Image URL"></label>
-      <label>${title} caption<input data-media-field="${phase === "before" ? "beforeCaption" : "afterCaption"}" value="${escapeHtml(item[`${phase}Caption`] || item.caption || item.title || "")}"></label>
-      <label>${title} alt text<input data-media-field="${phase === "before" ? "alt" : "afterAlt"}" value="${escapeHtml(beforeAfterAlt(item, phase))}"></label>
+      <label>Image URL<input data-media-field="${phase === "before" ? "src" : "afterSrc"}" data-media-url-input="${phase}" value="${escapeHtml(beforeAfterImage(item, phase))}" placeholder="Paste or upload an image"></label>
+      <label>Caption<input data-media-field="${phase === "before" ? "beforeCaption" : "afterCaption"}" value="${escapeHtml(item[`${phase}Caption`] || item.caption || item.title || "")}"></label>
+      <label>Alt text<input data-media-field="${phase === "before" ? "alt" : "afterAlt"}" value="${escapeHtml(beforeAfterAlt(item, phase))}"></label>
     </div>
     <div class="ba-admin-sliders">
       <label>${title} zoom <output>${escapeHtml(beforeAfterValue(item, `${phase}_zoom`, 1))}</output><input type="range" min="1" max="3" step="0.05" data-media-field="${phase}_zoom" value="${escapeHtml(beforeAfterValue(item, `${phase}_zoom`, 1))}"></label>
@@ -866,8 +869,9 @@ sectionEditor.addEventListener("change", async (event) => {
     const kind = row.dataset.mediaKind;
     const index = Number(row.dataset.mediaIndex);
     const collection = kind === "images" ? section.content.media.images : section.content.media[kind];
+    let phase = null;
     if (kind === "beforeAfter") {
-      const phase = event.target.matches("[data-media-upload-after]") ? "after" : "before";
+      phase = event.target.matches("[data-media-upload-after]") ? "after" : "before";
       const localUrl = URL.createObjectURL(event.target.files[0]);
       row.querySelectorAll(`[data-ba-preview-image="${phase}"]`).forEach((img) => { img.src = localUrl; });
     }
@@ -878,6 +882,11 @@ sectionEditor.addEventListener("change", async (event) => {
       else if (event.target.matches("[data-media-upload-after]")) collection[index].afterSrc = url;
       else if (kind === "beforeAfter" && !collection[index].beforeSrc) collection[index].beforeSrc = url;
       else collection[index].src = url;
+      if (kind === "beforeAfter") {
+        const input = row.querySelector(`[data-media-url-input="${phase}"]`);
+        if (input) input.value = url;
+        updateBeforeAfterPreview(row, collection[index]);
+      }
       setDirty();
       setMessage(statusMessage, "Image uploaded.", "success");
       renderSectionEditor();
