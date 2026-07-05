@@ -258,6 +258,7 @@ const extractPageModel = async (page) => {
   }
   const serviceConfig = extractServiceComponentConfig(html);
   const isServicePage = page.page_key !== "home";
+  const hasServiceBeforeAfterRoot = Boolean(doc.querySelector("[data-service-before-after-root]"));
   const mainSections = Array.from(doc.querySelectorAll("main > section"));
   const extractedSections = mainSections.map((section, index) => {
     const label = section.querySelector("h1,h2,h3")?.textContent.trim() || `Section ${index + 1}`;
@@ -299,7 +300,7 @@ const extractPageModel = async (page) => {
   });
 
   const footer = doc.querySelector("footer");
-  if (isServicePage && serviceMedia.beforeAfter?.length && !extractedSections.some((section) => section.section_type === "before_after")) {
+  if (isServicePage && hasServiceBeforeAfterRoot && !extractedSections.some((section) => section.section_type === "before_after")) {
     extractedSections.splice(1, 0, {
       section_key: "02-before-after",
       section_type: "before_after",
@@ -312,7 +313,7 @@ const extractPageModel = async (page) => {
           "text.1": { label: "Description", value: serviceConfig.beforeAfterDescription || "Before and after cleaning examples." }
         },
         faqs: [],
-        media: { beforeAfter: serviceMedia.beforeAfter }
+        media: { beforeAfter: serviceMedia.beforeAfter || [] }
       }
     });
   }
