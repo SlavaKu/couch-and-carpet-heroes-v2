@@ -724,33 +724,52 @@ const renderSeo = () => {
   schemaInput.value = JSON.stringify(currentPage?.schema_json || {}, null, 2);
 };
 
-const mergeServiceSectionsWithPublicModel = (cmsRows = [], publicRows = []) => {
+const mergeContentWithPublicModel = (publicContent = {}, existingContent = {}) => {
+  const content = { ...publicContent, ...existingContent };
+  const publicFields = publicContent.fields || {};
+  const existingFields = existingContent.fields || {};
+  content.fields = { ...publicFields, ...existingFields };
+
+  const publicMedia = publicContent.media || {};
+  const existingMedia = existingContent.media || {};
+  content.media = { ...publicMedia, ...existingMedia };
+  if (publicMedia.beforeAfter?.length && !existingMedia.beforeAfter?.length) content.media.beforeAfter = publicMedia.beforeAfter;
+  if (publicMedia.gallery?.length && !existingMedia.gallery?.length) content.media.gallery = publicMedia.gallery;
+  if (publicMedia.images?.length && !existingMedia.images?.length) content.media.images = publicMedia.images;
+  if (publicMedia.imageBreaks && !Object.keys(existingMedia.imageBreaks || {}).length) content.media.imageBreaks = publicMedia.imageBreaks;
+
+  if ((publicContent.faqs || []).length && !(existingContent.faqs || []).length) content.faqs = publicContent.faqs;
+  return content;
+};
+
+const mergeSectionsWithPublicModel = (cmsRows = [], publicRows = []) => {
   const existingByKey = new Map(cmsRows.map((section) => [section.section_key, section]));
   const merged = publicRows.map((publicSection, index) => {
     const existing = existingByKey.get(publicSection.section_key);
     if (!existing) return { ...publicSection, sort_order: (index + 1) * 10 };
     existingByKey.delete(publicSection.section_key);
-    const content = { ...(publicSection.content || {}), ...(existing.content || {}) };
-    const publicMedia = publicSection.content?.media || {};
-    const existingMedia = existing.content?.media || {};
-    content.media = { ...publicMedia, ...existingMedia };
-    if (publicMedia.beforeAfter?.length && !existingMedia.beforeAfter?.length) content.media.beforeAfter = publicMedia.beforeAfter;
-    if (publicMedia.gallery?.length && !existingMedia.gallery?.length) content.media.gallery = publicMedia.gallery;
-    if (publicMedia.imageBreaks && !Object.keys(existingMedia.imageBreaks || {}).length) content.media.imageBreaks = publicMedia.imageBreaks;
     return {
       ...publicSection,
       ...existing,
       section_type: publicSection.section_type,
       label: existing.label || publicSection.label,
       sort_order: (index + 1) * 10,
-      content
+      is_visible: existing.is_visible !== false,
+      content: mergeContentWithPublicModel(publicSection.content || {}, existing.content || {})
     };
   });
   existingByKey.forEach((section) => {
-    merged.push({ ...section, sort_order: (merged.length + 1) * 10 });
+    merged.push({ ...section, is_visible: false, sort_order: (merged.length + 1) * 10 });
   });
   return merged;
 };
+
+const mergePageWithPublicModel = (cmsPage = {}, publicPage = {}) => ({
+  ...publicPage,
+  ...cmsPage,
+  seo: { ...(publicPage.seo || {}), ...(cmsPage.seo || {}) },
+  schema_json: Object.keys(cmsPage.schema_json || {}).length ? cmsPage.schema_json : (publicPage.schema_json || {})
+});
 const renderAll = () => {
   renderPageOptions();
   renderSeo();
@@ -776,15 +795,11 @@ const loadPageFromCms = async (pageKey) => {
     const pageRows = await cmsRequest("cms_pages", `?page_key=eq.${encodeURIComponent(pageKey)}&select=page_key,title,path,seo,schema_json&limit=1`);
     const sectionRows = await cmsRequest("cms_sections", `?page_key=eq.${encodeURIComponent(pageKey)}&select=section_key,section_type,label,sort_order,is_visible,content&order=sort_order.asc`);
     if (pageRows?.[0] && sectionRows?.length) {
-      currentPage = { ...page, ...pageRows[0] };
-      if (pageKey === "home") {
-        sections = sectionRows;
-      } else {
-        const publicModel = await extractPageModel(page);
-        sections = mergeServiceSectionsWithPublicModel(sectionRows, publicModel.sections);
-      }
+      const publicModel = await extractPageModel(page);
+      currentPage = mergePageWithPublicModel({ ...page, ...pageRows[0] }, publicModel);
+      sections = mergeSectionsWithPublicModel(sectionRows, publicModel.sections);
       activeSectionKey = sections[0]?.section_key || null;
-      setMessage(statusMessage, pageKey === "home" ? "Loaded from Supabase." : "Loaded from Supabase and synced with the current public page structure.", "success");
+      setMessage(statusMessage, "Loaded from Supabase and synced with the current public page structure.", "success");
     } else {
       await loadDefaultsFromSite(false);
       setMessage(statusMessage, "Loaded current site defaults. Save to publish CMS-managed content.", "success");
