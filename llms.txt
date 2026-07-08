@@ -1,0 +1,25 @@
+# Couch and Carpet Heroes
+
+> Couch and Carpet Heroes is a Bay Area soft-surface cleaning company serving Mountain View and nearby cities with carpet cleaning, upholstery cleaning, mattress cleaning and area rug cleaning for homes, rentals and businesses.
+
+This site helps homeowners, renters, property managers and local businesses understand available cleaning services, realistic stain expectations, service areas, pricing paths and booking options. The most important conversion path is the homepage estimate calculator at https://slavaku.github.io/couch-and-carpet-heroes-v2/#estimate.
+
+## Important pages
+
+- [Home and estimate calculator](https://slavaku.github.io/couch-and-carpet-heroes-v2/): Overview of services, instant estimate builder, contact options, reviews, FAQ and company information.
+- [Carpet Cleaning](https://slavaku.github.io/couch-and-carpet-heroes-v2/carpet-cleaning/): Deep carpet cleaning for homes, apartments, offices, rentals, stains, traffic lanes and pet odor concerns.
+- [Upholstery Cleaning](https://slavaku.github.io/couch-and-carpet-heroes-v2/upholstery-cleaning/): Sofa, sectional, chair, ottoman and fabric furniture cleaning with fabric-specific care guidance.
+- [Mattress Cleaning](https://slavaku.github.io/couch-and-carpet-heroes-v2/mattress-cleaning/): Mattress cleaning focused on dust mites, allergens, sweat, body oils, stains, pet accidents and odors.
+- [Area Rug Cleaning](https://slavaku.github.io/couch-and-carpet-heroes-v2/area-rug-cleaning/): Area rug cleaning for synthetic, wool and delicate rugs, including inspection-based cleaning recommendations.
+
+## Business facts
+
+- [Contact by phone](tel:+16505196607): Phone number is (650) 519-6607.
+- [Contact by email](mailto:info@ccheroes-pro.com): Email address is info@ccheroes-pro.com.
+- [Service area](https://slavaku.github.io/couch-and-carpet-heroes-v2/#services): Mountain View, Palo Alto, Sunnyvale, Los Altos, Cupertino, Santa Clara, San Jose, Menlo Park, Redwood City, San Mateo and nearby Bay Area cities.
+- [Sitemap](https://slavaku.github.io/couch-and-carpet-heroes-v2/sitemap.xml): XML sitemap for all public pages.
+
+## Optional
+
+- [Robots policy](https://slavaku.github.io/couch-and-carpet-heroes-v2/robots.txt): Crawl guidance for search engines and AI crawlers.
+- [Full LLM context](https://slavaku.github.io/couch-and-carpet-heroes-v2/llms-full.txt): Detailed plain-text business and service summary for AI answer engines.

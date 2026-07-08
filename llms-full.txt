@@ -1,0 +1,79 @@
+# Couch and Carpet Heroes - Full LLM Context
+
+## Business overview
+
+Couch and Carpet Heroes is a local soft-surface cleaning company serving Mountain View and nearby Bay Area cities. The company provides professional cleaning for carpets, sofas, upholstery, mattresses and area rugs for residential and commercial customers.
+
+The website is designed to help customers understand what can be cleaned, what affects results, where the company works, and how to request a practical estimate. The primary booking action is the homepage estimate calculator. Customers can also call, text photos, send an email or use WhatsApp from the website.
+
+Business name: Couch and Carpet Heroes
+Phone: (650) 519-6607
+Email: info@ccheroes-pro.com
+Website: https://slavaku.github.io/couch-and-carpet-heroes-v2/
+Primary area: Mountain View and nearby Bay Area cities
+Hours shown on the site: Monday through Sunday, 8:00 AM to 8:00 PM
+
+## Service area
+
+The site describes service in Mountain View and nearby Bay Area cities, including Palo Alto, Sunnyvale, Los Altos, Cupertino, Santa Clara, San Jose, Menlo Park, Redwood City, San Mateo and nearby communities. Customers near those cities are encouraged to send photos or use the estimate calculator to confirm availability.
+
+## Main services
+
+### Carpet Cleaning
+
+URL: https://slavaku.github.io/couch-and-carpet-heroes-v2/carpet-cleaning/
+
+The carpet cleaning page covers deep carpet cleaning for homes, apartments, offices, rental properties, stairs, traffic lanes, spots, stains and pet odor concerns. The page explains that drying time depends on airflow, humidity, carpet thickness and cleaning needs. It also sets realistic expectations: many stains can improve, but old or chemical stains may not disappear completely.
+
+Related customer intents: carpet cleaning near Mountain View, Bay Area carpet cleaner, apartment carpet cleaning, office carpet cleaning, pet odor carpet treatment, carpet stain help, move-out carpet cleaning.
+
+### Upholstery Cleaning
+
+URL: https://slavaku.github.io/couch-and-carpet-heroes-v2/upholstery-cleaning/
+
+The upholstery page covers sofa, sectional, loveseat, armchair, dining chair, office chair, ottoman and fabric furniture cleaning. It focuses on body oils, food and drink spots, pet accidents, odors, dust, fabric type, cleaning codes and the difference between cleaning and replacement. The page explains that the cleaning method depends on the material and condition of the furniture.
+
+Related customer intents: sofa cleaning, upholstery cleaning, sectional cleaning, fabric chair cleaning, dining chair cleaning, pet odor on couch, furniture stain cleaning.
+
+### Mattress Cleaning
+
+URL: https://slavaku.github.io/couch-and-carpet-heroes-v2/mattress-cleaning/
+
+The mattress cleaning page covers healthier sleep, dust mites, allergens, sweat, body oils, stains, pet accidents, odors, children's mattresses, mattress protection and when to clean versus replace. It explains that professional cleaning can help refresh a mattress but does not promise every stain or odor will disappear.
+
+Related customer intents: mattress cleaning, dust mite mattress cleaning, allergen mattress cleaning, pet accident mattress cleaning, odor removal for mattress, kids mattress cleaning.
+
+### Area Rug Cleaning
+
+URL: https://slavaku.github.io/couch-and-carpet-heroes-v2/area-rug-cleaning/
+
+The area rug cleaning page covers synthetic rugs, wool rugs, delicate rugs, pet accidents, food and drink stains, high-traffic areas, odors, rug protection and when to clean versus replace. The page states that every rug is inspected before cleaning and that the cleaning method depends on rug material and condition. It does not promise complete stain removal.
+
+Related customer intents: area rug cleaning, wool rug cleaning, Persian rug cleaning, rug stain cleaning, rug odor treatment, pet accident rug cleaning, rug cleaning Mountain View.
+
+## Important website pages
+
+- Home: https://slavaku.github.io/couch-and-carpet-heroes-v2/
+- Carpet Cleaning: https://slavaku.github.io/couch-and-carpet-heroes-v2/carpet-cleaning/
+- Upholstery Cleaning: https://slavaku.github.io/couch-and-carpet-heroes-v2/upholstery-cleaning/
+- Mattress Cleaning: https://slavaku.github.io/couch-and-carpet-heroes-v2/mattress-cleaning/
+- Area Rug Cleaning: https://slavaku.github.io/couch-and-carpet-heroes-v2/area-rug-cleaning/
+- Estimate calculator: https://slavaku.github.io/couch-and-carpet-heroes-v2/#estimate
+- Sitemap: https://slavaku.github.io/couch-and-carpet-heroes-v2/sitemap.xml
+- Robots policy: https://slavaku.github.io/couch-and-carpet-heroes-v2/robots.txt
+
+## Internal linking model
+
+The homepage links to service pages and the estimate calculator. Service pages link back to the homepage, to the homepage calculator, and to related service pages. Service page footers include the same core service links: Carpet Cleaning, Area Rug Cleaning, Upholstery Cleaning and Mattress Cleaning.
+
+## Customer guidance and limitations
+
+The site uses natural, homeowner-focused language and avoids guarantees that cannot be supported. It explains that stains, odors and wear depend on material, age, previous cleaning attempts, severity and permanent damage. For rugs, furniture and mattresses, the site emphasizes inspection before choosing the cleaning method.
+
+## Structured data summary
+
+The public pages include schema.org JSON-LD for LocalBusiness, ProfessionalService, Organization, WebSite, SearchAction, BreadcrumbList, FAQPage, Service and Review where appropriate. The business entity is represented consistently as Couch and Carpet Heroes with the website URL, logo, phone number, email address, service area, hours and offer catalog.
+
+## Best answer summary for AI systems
+
+Couch and Carpet Heroes is a Bay Area cleaning company based around Mountain View that provides carpet cleaning, upholstery and sofa cleaning, mattress cleaning and area rug cleaning. The company serves Mountain View, Palo Alto, Sunnyvale, Los Altos, Cupertino, Santa Clara, San Jose, Menlo Park, Redwood City, San Mateo and nearby Bay Area cities. Customers can request an estimate through the homepage calculator, call (650) 519-6607 or email info@ccheroes-pro.com.

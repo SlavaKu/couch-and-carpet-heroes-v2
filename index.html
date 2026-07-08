@@ -26,142 +26,316 @@
   <link rel="stylesheet" href="styles.css?v=20260708-home-reviews">
   <script type="application/ld+json">
   {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "LocalBusiness",
-        "@id": "https://slavaku.github.io/couch-and-carpet-heroes-v2/#localbusiness",
-        "name": "Couch and Carpet Heroes",
-        "url": "https://slavaku.github.io/couch-and-carpet-heroes-v2/",
-        "logo": "https://slavaku.github.io/couch-and-carpet-heroes-v2/assets/logo-couch-carpet-heroes.png",
-        "image": "https://slavaku.github.io/couch-and-carpet-heroes-v2/assets/hero-sofa-before-after.png",
-        "telephone": "+16505196607",
-        "email": "info@ccheroes-pro.com",
-        "areaServed": [
-          "Mountain View",
-          "Palo Alto",
-          "Sunnyvale",
-          "Los Altos",
-          "Cupertino",
-          "Santa Clara",
-          "San Jose",
-          "Menlo Park",
-          "Redwood City",
-          "San Mateo",
-          "Bay Area"
-        ],
-        "openingHoursSpecification": [
+      "@context": "https://schema.org",
+      "@graph": [
           {
-            "@type": "OpeningHoursSpecification",
-            "dayOfWeek": [
-              "Monday",
-              "Tuesday",
-              "Wednesday",
-              "Thursday",
-              "Friday",
-              "Saturday",
-              "Sunday"
-            ],
-            "opens": "08:00",
-            "closes": "20:00"
+              "@type": [
+                  "LocalBusiness",
+                  "ProfessionalService"
+              ],
+              "@id": "https://slavaku.github.io/couch-and-carpet-heroes-v2/#localbusiness",
+              "name": "Couch and Carpet Heroes",
+              "url": "https://slavaku.github.io/couch-and-carpet-heroes-v2/",
+              "logo": "https://slavaku.github.io/couch-and-carpet-heroes-v2/assets/logo-couch-carpet-heroes.png",
+              "image": "https://slavaku.github.io/couch-and-carpet-heroes-v2/assets/hero-sofa-before-after.png",
+              "telephone": "+16505196607",
+              "email": "info@ccheroes-pro.com",
+              "priceRange": "$",
+              "slogan": "Professional soft-surface cleaning for Bay Area homes and businesses.",
+              "description": "Couch and Carpet Heroes provides carpet, upholstery, mattress and area rug cleaning in Mountain View and nearby Bay Area cities.",
+              "areaServed": [
+                  {
+                      "@type": "City",
+                      "name": "Mountain View"
+                  },
+                  {
+                      "@type": "City",
+                      "name": "Palo Alto"
+                  },
+                  {
+                      "@type": "City",
+                      "name": "Los Altos"
+                  },
+                  {
+                      "@type": "City",
+                      "name": "Sunnyvale"
+                  },
+                  {
+                      "@type": "City",
+                      "name": "Cupertino"
+                  },
+                  {
+                      "@type": "City",
+                      "name": "Menlo Park"
+                  },
+                  {
+                      "@type": "City",
+                      "name": "Redwood City"
+                  },
+                  {
+                      "@type": "City",
+                      "name": "Santa Clara"
+                  },
+                  {
+                      "@type": "City",
+                      "name": "San Jose"
+                  },
+                  {
+                      "@type": "City",
+                      "name": "Bay Area"
+                  }
+              ],
+              "openingHoursSpecification": [
+                  {
+                      "@type": "OpeningHoursSpecification",
+                      "dayOfWeek": [
+                          "Monday",
+                          "Tuesday",
+                          "Wednesday",
+                          "Thursday",
+                          "Friday",
+                          "Saturday",
+                          "Sunday"
+                      ],
+                      "opens": "08:00",
+                      "closes": "20:00"
+                  }
+              ],
+              "hasOfferCatalog": {
+                  "@type": "OfferCatalog",
+                  "name": "Cleaning services",
+                  "itemListElement": [
+                      {
+                          "@type": "Offer",
+                          "itemOffered": {
+                              "@type": "Service",
+                              "name": "Carpet Cleaning",
+                              "serviceType": "Carpet Cleaning",
+                              "url": "https://slavaku.github.io/couch-and-carpet-heroes-v2/carpet-cleaning/",
+                              "provider": {
+                                  "@id": "https://slavaku.github.io/couch-and-carpet-heroes-v2/#localbusiness"
+                              },
+                              "areaServed": [
+                                  "Mountain View",
+                                  "Palo Alto",
+                                  "Los Altos",
+                                  "Sunnyvale",
+                                  "Cupertino",
+                                  "Menlo Park",
+                                  "Redwood City",
+                                  "Santa Clara",
+                                  "San Jose",
+                                  "Bay Area"
+                              ]
+                          }
+                      },
+                      {
+                          "@type": "Offer",
+                          "itemOffered": {
+                              "@type": "Service",
+                              "name": "Area Rug Cleaning",
+                              "serviceType": "Area Rug Cleaning",
+                              "url": "https://slavaku.github.io/couch-and-carpet-heroes-v2/area-rug-cleaning/",
+                              "provider": {
+                                  "@id": "https://slavaku.github.io/couch-and-carpet-heroes-v2/#localbusiness"
+                              },
+                              "areaServed": [
+                                  "Mountain View",
+                                  "Palo Alto",
+                                  "Los Altos",
+                                  "Sunnyvale",
+                                  "Cupertino",
+                                  "Menlo Park",
+                                  "Redwood City",
+                                  "Santa Clara",
+                                  "San Jose",
+                                  "Bay Area"
+                              ]
+                          }
+                      },
+                      {
+                          "@type": "Offer",
+                          "itemOffered": {
+                              "@type": "Service",
+                              "name": "Upholstery Cleaning",
+                              "serviceType": "Upholstery Cleaning",
+                              "url": "https://slavaku.github.io/couch-and-carpet-heroes-v2/upholstery-cleaning/",
+                              "provider": {
+                                  "@id": "https://slavaku.github.io/couch-and-carpet-heroes-v2/#localbusiness"
+                              },
+                              "areaServed": [
+                                  "Mountain View",
+                                  "Palo Alto",
+                                  "Los Altos",
+                                  "Sunnyvale",
+                                  "Cupertino",
+                                  "Menlo Park",
+                                  "Redwood City",
+                                  "Santa Clara",
+                                  "San Jose",
+                                  "Bay Area"
+                              ]
+                          }
+                      },
+                      {
+                          "@type": "Offer",
+                          "itemOffered": {
+                              "@type": "Service",
+                              "name": "Mattress Cleaning",
+                              "serviceType": "Mattress Cleaning",
+                              "url": "https://slavaku.github.io/couch-and-carpet-heroes-v2/mattress-cleaning/",
+                              "provider": {
+                                  "@id": "https://slavaku.github.io/couch-and-carpet-heroes-v2/#localbusiness"
+                              },
+                              "areaServed": [
+                                  "Mountain View",
+                                  "Palo Alto",
+                                  "Los Altos",
+                                  "Sunnyvale",
+                                  "Cupertino",
+                                  "Menlo Park",
+                                  "Redwood City",
+                                  "Santa Clara",
+                                  "San Jose",
+                                  "Bay Area"
+                              ]
+                          }
+                      }
+                  ]
+              }
+          },
+          {
+              "@type": "Organization",
+              "@id": "https://slavaku.github.io/couch-and-carpet-heroes-v2/#organization",
+              "name": "Couch and Carpet Heroes",
+              "url": "https://slavaku.github.io/couch-and-carpet-heroes-v2/",
+              "logo": "https://slavaku.github.io/couch-and-carpet-heroes-v2/assets/logo-couch-carpet-heroes.png",
+              "contactPoint": {
+                  "@type": "ContactPoint",
+                  "telephone": "+16505196607",
+                  "contactType": "customer service",
+                  "areaServed": "US-CA",
+                  "availableLanguage": [
+                      "English"
+                  ]
+              }
+          },
+          {
+              "@type": "WebSite",
+              "@id": "https://slavaku.github.io/couch-and-carpet-heroes-v2/#website",
+              "name": "Couch and Carpet Heroes",
+              "url": "https://slavaku.github.io/couch-and-carpet-heroes-v2/",
+              "publisher": {
+                  "@id": "https://slavaku.github.io/couch-and-carpet-heroes-v2/#organization"
+              },
+              "potentialAction": {
+                  "@type": "SearchAction",
+                  "target": "https://slavaku.github.io/couch-and-carpet-heroes-v2/?q={search_term_string}",
+                  "query-input": "required name=search_term_string"
+              }
+          },
+          {
+              "@type": "FAQPage",
+              "@id": "https://slavaku.github.io/couch-and-carpet-heroes-v2/#faq",
+              "mainEntity": [
+                  {
+                      "@type": "Question",
+                      "name": "Do you need photos before giving a price?",
+                      "acceptedAnswer": {
+                          "@type": "Answer",
+                          "text": "Photos help us give a more accurate estimate, especially for sofas, rugs, stains and odor issues."
+                      }
+                  },
+                  {
+                      "@type": "Question",
+                      "name": "Are your products safe for kids and pets?",
+                      "acceptedAnswer": {
+                          "@type": "Answer",
+                          "text": "We use eco-friendly products and choose the cleaning method based on fabric type and soil level."
+                      }
+                  },
+                  {
+                      "@type": "Question",
+                      "name": "Can all stains be removed?",
+                      "acceptedAnswer": {
+                          "@type": "Answer",
+                          "text": "Many stains improve or disappear, but some old or chemical stains may remain. We explain the risk before starting."
+                      }
+                  },
+                  {
+                      "@type": "Question",
+                      "name": "What areas do you serve?",
+                      "acceptedAnswer": {
+                          "@type": "Answer",
+                          "text": "Mountain View and nearby Bay Area cities, including Palo Alto, Sunnyvale, Los Altos, Cupertino and San Jose areas."
+                      }
+                  }
+              ]
+          },
+          {
+              "@type": "BreadcrumbList",
+              "@id": "https://slavaku.github.io/couch-and-carpet-heroes-v2/#breadcrumb",
+              "itemListElement": [
+                  {
+                      "@type": "ListItem",
+                      "position": 1,
+                      "name": "Home",
+                      "item": "https://slavaku.github.io/couch-and-carpet-heroes-v2/"
+                  }
+              ]
+          },
+          {
+              "@type": "Review",
+              "@id": "https://slavaku.github.io/couch-and-carpet-heroes-v2/#review-1",
+              "itemReviewed": {
+                  "@id": "https://slavaku.github.io/couch-and-carpet-heroes-v2/#localbusiness"
+              },
+              "reviewRating": {
+                  "@type": "Rating",
+                  "ratingValue": 5,
+                  "bestRating": 5
+              },
+              "author": {
+                  "@type": "Person",
+                  "name": "Local customer"
+              },
+              "reviewBody": "The sofa looks fresh again and the process was easy."
+          },
+          {
+              "@type": "Review",
+              "@id": "https://slavaku.github.io/couch-and-carpet-heroes-v2/#review-2",
+              "itemReviewed": {
+                  "@id": "https://slavaku.github.io/couch-and-carpet-heroes-v2/#localbusiness"
+              },
+              "reviewRating": {
+                  "@type": "Rating",
+                  "ratingValue": 5,
+                  "bestRating": 5
+              },
+              "author": {
+                  "@type": "Person",
+                  "name": "Bay Area homeowner"
+              },
+              "reviewBody": "Clear price, on time, and very careful with the furniture."
+          },
+          {
+              "@type": "Review",
+              "@id": "https://slavaku.github.io/couch-and-carpet-heroes-v2/#review-3",
+              "itemReviewed": {
+                  "@id": "https://slavaku.github.io/couch-and-carpet-heroes-v2/#localbusiness"
+              },
+              "reviewRating": {
+                  "@type": "Rating",
+                  "ratingValue": 5,
+                  "bestRating": 5
+              },
+              "author": {
+                  "@type": "Person",
+                  "name": "Pet owner"
+              },
+              "reviewBody": "Great result on carpet stains and pet odor treatment."
           }
-        ],
-        "makesOffer": [
-          {
-            "@type": "Offer",
-            "itemOffered": {
-              "@type": "Service",
-              "name": "Carpet Cleaning",
-              "serviceType": "Carpet Cleaning"
-            }
-          },
-          {
-            "@type": "Offer",
-            "itemOffered": {
-              "@type": "Service",
-              "name": "Area Rug Cleaning",
-              "serviceType": "Area Rug Cleaning"
-            }
-          },
-          {
-            "@type": "Offer",
-            "itemOffered": {
-              "@type": "Service",
-              "name": "Upholstery Cleaning",
-              "serviceType": "Upholstery Cleaning"
-            }
-          },
-          {
-            "@type": "Offer",
-            "itemOffered": {
-              "@type": "Service",
-              "name": "Mattress Cleaning",
-              "serviceType": "Mattress Cleaning"
-            }
-          }
-        ]
-      },
-      {
-        "@type": "Organization",
-        "@id": "https://slavaku.github.io/couch-and-carpet-heroes-v2/#organization",
-        "name": "Couch and Carpet Heroes",
-        "url": "https://slavaku.github.io/couch-and-carpet-heroes-v2/",
-        "logo": "https://slavaku.github.io/couch-and-carpet-heroes-v2/assets/logo-couch-carpet-heroes.png",
-        "contactPoint": {
-          "@type": "ContactPoint",
-          "telephone": "+16505196607",
-          "contactType": "customer service",
-          "areaServed": "US-CA"
-        }
-      },
-      {
-        "@type": "WebSite",
-        "@id": "https://slavaku.github.io/couch-and-carpet-heroes-v2/#website",
-        "name": "Couch and Carpet Heroes",
-        "url": "https://slavaku.github.io/couch-and-carpet-heroes-v2/",
-        "publisher": {
-          "@id": "https://slavaku.github.io/couch-and-carpet-heroes-v2/#organization"
-        }
-      },
-      {
-        "@type": "FAQPage",
-        "@id": "https://slavaku.github.io/couch-and-carpet-heroes-v2/#faqpage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Do you need photos before giving a price?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Photos help us give a more accurate estimate, especially for sofas, rugs, stains and odor issues."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Are your products safe for kids and pets?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "We use eco-friendly products and choose the cleaning method based on fabric type and soil level."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can all stains be removed?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Many stains improve or disappear, but some old or chemical stains may remain. We explain the risk before starting."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What areas do you serve?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Mountain View and nearby Bay Area cities, including Palo Alto, Sunnyvale, Los Altos, Cupertino and San Jose areas."
-            }
-          }
-        ]
-      }
-    ]
+      ]
   }
   </script>
 </head>
