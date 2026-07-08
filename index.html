@@ -566,17 +566,26 @@
       </div>
     </section>
 
-    <section class="reviews">
+    <section class="reviews" id="reviews">
       <div class="container">
         <div class="section-head">
           <h2>What Customers Notice</h2>
           <p>Use this area for real Google or Yelp reviews later.</p>
         </div>
 
-        <div class="review-grid">
-          <article class="review-card"><div class="stars">★★★★★</div><p>"The sofa looks fresh again and the process was easy."</p><strong>Local customer</strong></article>
-          <article class="review-card"><div class="stars">★★★★★</div><p>"Clear price, on time, and very careful with the furniture."</p><strong>Bay Area homeowner</strong></article>
-          <article class="review-card"><div class="stars">★★★★★</div><p>"Great result on carpet stains and pet odor treatment."</p><strong>Pet owner</strong></article>
+        <div class="reviews-carousel" data-reviews-carousel>
+          <div class="reviews-viewport" data-reviews-viewport>
+            <div class="review-grid" data-reviews-track>
+              <article class="review-card" data-review-slide data-source="Google"><a class="review-badge" href="#reviews" data-review-source="google">Google</a><div class="stars" aria-label="5 out of 5 stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><p class="review-text">The sofa looks fresh again and the process was easy.</p><strong>Local customer</strong></article>
+              <article class="review-card" data-review-slide data-source="Google"><a class="review-badge" href="#reviews" data-review-source="google">Google</a><div class="stars" aria-label="5 out of 5 stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><p class="review-text">Clear price, on time, and very careful with the furniture.</p><strong>Bay Area homeowner</strong></article>
+              <article class="review-card" data-review-slide data-source="Google"><a class="review-badge" href="#reviews" data-review-source="google">Google</a><div class="stars" aria-label="5 out of 5 stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><p class="review-text">Great result on carpet stains and pet odor treatment.</p><strong>Pet owner</strong></article>
+            </div>
+          </div>
+          <div class="reviews-controls">
+            <button class="reviews-arrow" type="button" data-reviews-prev aria-label="Previous review">&larr;</button>
+            <span class="reviews-counter" data-reviews-counter>1 of 3</span>
+            <button class="reviews-arrow" type="button" data-reviews-next aria-label="Next review">&rarr;</button>
+          </div>
         </div>
       </div>
     </section>

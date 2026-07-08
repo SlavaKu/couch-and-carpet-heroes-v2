@@ -533,3 +533,50 @@ input:focus, textarea:focus, select:focus {
   }
 }
 
+
+.reviews-editor {
+  display: grid;
+  gap: 16px;
+}
+.reviews-settings {
+  align-items: end;
+}
+.reviews-admin-list {
+  display: grid;
+  gap: 14px;
+}
+.review-admin-card {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #fff;
+}
+.review-admin-card.is-hidden {
+  opacity: .68;
+  background: var(--soft);
+}
+.review-admin-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.review-admin-head strong {
+  color: var(--black);
+  font-size: 16px;
+}
+.reviews-editor textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+@media (max-width: 720px) {
+  .review-admin-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .review-admin-head .row-actions {
+    width: 100%;
+  }
+}

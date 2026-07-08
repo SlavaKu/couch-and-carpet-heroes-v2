@@ -43,6 +43,7 @@
 
   const inferSectionType = (section) => {
     if (section.classList.contains("hero")) return "hero";
+    if (section.classList.contains("reviews")) return "reviews";
     if (section.classList.contains("gallery") || section.querySelector("[data-service-gallery-root]")) return "gallery";
     if (section.classList.contains("booking-band")) return "final_cta";
     if (section.querySelector(".faq-grid")) return "faq";
@@ -75,7 +76,7 @@
   };
 
   const editableTextNodes = (root) => Array.from(root.querySelectorAll("h1,h2,h3,h4,p,li,summary,a.btn,a:not(.brand):not(.phone-link),button.btn,.eyebrow,.lead,.footer-bottom,.top-note,.top-actions span,.breadcrumbs span[aria-current='page']"))
-    .filter((node) => !node.closest("script,style,.ba-slider,.service-gallery-dots,.ba-dots,.calculator-layout,.estimate-modal"));
+    .filter((node) => !node.closest("script,style,.ba-slider,.service-gallery-dots,.ba-dots,.calculator-layout,.estimate-modal,.review-card,.reviews-carousel,.review-modal"));
 
   const editableLinks = (root) => Array.from(root.querySelectorAll("a[href]"))
     .filter((node) => !node.closest(".calculator-layout,.estimate-modal"));
@@ -175,6 +176,104 @@
     window.renderServicePageMedia?.(payload);
   };
 
+  const initializeReviewCarousel = (section) => {
+    const carousel = section.querySelector?.("[data-reviews-carousel]") || section;
+    const track = carousel?.querySelector?.("[data-reviews-track]");
+    if (!carousel || !track || carousel.dataset.reviewsInitialized === "true") return;
+    carousel.dataset.reviewsInitialized = "true";
+    const slides = Array.from(track.querySelectorAll("[data-review-slide],.review-card"));
+    const counter = carousel.querySelector("[data-reviews-counter]");
+    let active = 0;
+    const visibleCount = () => window.innerWidth <= 620 ? 1 : (window.innerWidth <= 1080 ? 2 : 3);
+    const update = () => {
+      const max = Math.max(0, slides.length - visibleCount());
+      active = Math.min(active, max);
+      track.style.setProperty("--review-index", active);
+      if (counter) counter.textContent = `${Math.min(active + 1, slides.length)} of ${slides.length}`;
+      const prev = carousel.querySelector("[data-reviews-prev]");
+      const next = carousel.querySelector("[data-reviews-next]");
+      if (prev) prev.disabled = active <= 0;
+      if (next) next.disabled = active >= max;
+    };
+    carousel.querySelector("[data-reviews-prev]")?.addEventListener("click", () => { active = Math.max(0, active - 1); update(); });
+    carousel.querySelector("[data-reviews-next]")?.addEventListener("click", () => { active += 1; update(); });
+    window.addEventListener("resize", update, { passive: true });
+    update();
+  };
+
+  const renderReviews = (section, data = {}) => {
+    const carousel = section.querySelector("[data-reviews-carousel]");
+    if (!carousel) return;
+    const reviews = (data.items || []).filter((review) => review.is_visible !== false);
+    if (!reviews.length) return;
+    const profileUrl = (source) => source === "Yelp" ? (data.yelpUrl || "#reviews") : (data.googleUrl || "#reviews");
+    carousel.innerHTML = `
+      <div class="reviews-viewport" data-reviews-viewport>
+        <div class="review-grid" data-reviews-track>
+          ${reviews.map((review, index) => {
+            const source = review.source === "Yelp" ? "Yelp" : "Google";
+            const url = profileUrl(source);
+            const rating = Math.min(5, Math.max(1, Number(review.rating || 5)));
+            return `
+              <article class="review-card" data-review-slide data-source="${escapeHtml(source)}">
+                <a class="review-badge" href="${escapeHtml(url)}" ${url === "#reviews" ? "" : `target="_blank" rel="noopener"`} data-review-source="${source.toLowerCase()}">${escapeHtml(source)}</a>
+                <div class="stars" aria-label="${rating} out of 5 stars">${"&#9733;".repeat(rating)}${"&#9734;".repeat(5 - rating)}</div>
+                <p class="review-text">${escapeHtml(review.text || "")}</p>
+                ${(review.text || "").length > 150 ? `<button class="review-read-more" type="button" data-review-read="${index}">Read more</button>` : ""}
+                <strong>${escapeHtml(review.name || "Customer")}</strong>
+              </article>
+            `;
+          }).join("")}
+        </div>
+      </div>
+      <div class="reviews-controls">
+        <button class="reviews-arrow" type="button" data-reviews-prev aria-label="Previous review">&larr;</button>
+        <span class="reviews-counter" data-reviews-counter></span>
+        <button class="reviews-arrow" type="button" data-reviews-next aria-label="Next review">&rarr;</button>
+      </div>
+      <div class="review-modal" data-review-modal hidden>
+        <div class="review-modal-panel" role="dialog" aria-modal="true" aria-label="Full customer review">
+          <button class="review-modal-close" type="button" data-review-close aria-label="Close review">&times;</button>
+          <div class="review-modal-source" data-review-modal-source></div>
+          <div class="stars" data-review-modal-stars></div>
+          <p data-review-modal-text></p>
+          <strong data-review-modal-name></strong>
+        </div>
+      </div>
+    `;
+    const track = carousel.querySelector("[data-reviews-track]");
+    const counter = carousel.querySelector("[data-reviews-counter]");
+    let active = 0;
+    const visibleCount = () => window.innerWidth <= 720 ? 1 : (window.innerWidth <= 1080 ? 2 : 3);
+    const update = () => {
+      const max = Math.max(0, reviews.length - visibleCount());
+      active = Math.min(active, max);
+      track.style.setProperty("--review-index", active);
+      counter.textContent = `${Math.min(active + 1, reviews.length)} of ${reviews.length}`;
+      carousel.querySelector("[data-reviews-prev]").disabled = active <= 0;
+      carousel.querySelector("[data-reviews-next]").disabled = active >= max;
+    };
+    carousel.querySelector("[data-reviews-prev]")?.addEventListener("click", () => { active = Math.max(0, active - 1); update(); });
+    carousel.querySelector("[data-reviews-next]")?.addEventListener("click", () => { active += 1; update(); });
+    const modal = carousel.querySelector("[data-review-modal]");
+    carousel.querySelectorAll("[data-review-read]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const review = reviews[Number(button.dataset.reviewRead)];
+        if (!review || !modal) return;
+        const rating = Math.min(5, Math.max(1, Number(review.rating || 5)));
+        modal.querySelector("[data-review-modal-source]").textContent = review.source === "Yelp" ? "Yelp review" : "Google review";
+        modal.querySelector("[data-review-modal-stars]").innerHTML = "&#9733;".repeat(rating) + "&#9734;".repeat(5 - rating);
+        modal.querySelector("[data-review-modal-text]").textContent = review.text || "";
+        modal.querySelector("[data-review-modal-name]").textContent = review.name || "Customer";
+        modal.hidden = false;
+      });
+    });
+    modal?.querySelector("[data-review-close]")?.addEventListener("click", () => { modal.hidden = true; });
+    modal?.addEventListener("click", (event) => { if (event.target === modal) modal.hidden = true; });
+    window.addEventListener("resize", update, { passive: true });
+    update();
+  };
+
   const applyMediaToSection = (section, media = {}) => {
     if (media.beforeAfter?.length && section.querySelector("[data-ba-carousel]")) {
       renderHomepageBeforeAfter(section, media.beforeAfter);
@@ -216,6 +315,7 @@
       }
     });
     renderFaq(section, content.faqs || []);
+    renderReviews(section, content.reviews || {});
     applyMediaToSection(section, content.media || {});
   };
 
@@ -263,6 +363,7 @@
   const loadUniversalCms = async () => {
     const page = currentPage();
     annotateSections();
+    document.querySelectorAll(".reviews").forEach(initializeReviewCarousel);
     try {
       const pageRows = await cmsFetch("cms_pages", `?page_key=eq.${encodeURIComponent(page.page_key)}&select=page_key,title,path,seo,schema_json,is_active&limit=1`);
       const pageRow = pageRows?.[0];

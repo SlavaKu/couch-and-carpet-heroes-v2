@@ -64,6 +64,7 @@ const slug = (value, fallback) => {
 
 const inferSectionType = (section) => {
   if (section.classList.contains("hero")) return "hero";
+  if (section.classList.contains("reviews")) return "reviews";
   if (section.classList.contains("gallery") || section.querySelector("[data-service-gallery-root]")) return "gallery";
   if (section.classList.contains("booking-band")) return "final_cta";
   if (section.querySelector(".faq-grid")) return "faq";
@@ -86,6 +87,7 @@ const friendlyTypeLabels = {
   related_services: "Related Services",
   service_areas: "Service Areas",
   author: "Author Section",
+  reviews: "Reviews",
   footer: "Footer",
   content: "Page Section"
 };
@@ -158,7 +160,7 @@ const makeFriendlyLinkLabel = (sectionType, node, index) => {
 };
 
 const textNodes = (root) => Array.from(root.querySelectorAll("h1,h2,h3,h4,p,li,summary,a.btn,a:not(.brand):not(.phone-link),button.btn,.eyebrow,.lead,.footer-bottom,.top-note,.top-actions span,.breadcrumbs span[aria-current='page']"))
-  .filter((node) => !node.closest("script,style,.ba-slider,.service-gallery-dots,.ba-dots,.calculator-layout,.estimate-modal"));
+  .filter((node) => !node.closest("script,style,.ba-slider,.service-gallery-dots,.ba-dots,.calculator-layout,.estimate-modal,.review-card,.reviews-carousel,.review-modal"));
 
 const linkNodes = (root) => Array.from(root.querySelectorAll("a[href]"))
   .filter((node) => !node.closest(".calculator-layout,.estimate-modal"));
@@ -180,6 +182,24 @@ const extractFaqs = (section) => Array.from(section.querySelectorAll(".faq-grid 
   question: item.querySelector("summary")?.textContent.trim() || "",
   answer: item.querySelector("p")?.textContent.trim() || ""
 })).filter((faq) => faq.question || faq.answer);
+
+const extractReviews = (section) => ({
+  googleUrl: section.querySelector("[data-review-source='google']")?.getAttribute("href") || "",
+  yelpUrl: section.querySelector("[data-review-source='yelp']")?.getAttribute("href") || "",
+  items: Array.from(section.querySelectorAll(".review-card")).map((card) => {
+    const source = card.dataset.source || card.querySelector("[data-review-source]")?.dataset.reviewSource || "Google";
+    const ratingLabel = card.querySelector(".stars")?.getAttribute("aria-label") || "";
+    const stars = card.querySelector(".stars")?.textContent || "";
+    const rating = Number((ratingLabel.match(/\d+/) || [])[0]) || (stars.match(/\u2605|\*/g) || []).length || 5;
+    return {
+      source: source.toLowerCase() === "yelp" ? "Yelp" : "Google",
+      name: card.querySelector("strong")?.textContent.trim() || "Customer",
+      rating: Math.min(5, Math.max(1, rating)),
+      text: (card.querySelector("p")?.textContent || "").trim().replace(/^\"|\"$/g, ""),
+      is_visible: card.hidden ? false : true
+    };
+  }).filter((review) => review.name || review.text)
+});
 
 const extractMedia = (section) => {
   const images = imageNodes(section).map((img) => ({
@@ -285,6 +305,7 @@ const extractPageModel = async (page) => {
     if (section.querySelector("[data-ba-carousel]")) media.beforeAfter = homeBeforeAfterFallback;
     if (type === "gallery" && serviceMedia.gallery) media.gallery = serviceMedia.gallery;
     if (section.querySelector("[data-service-image-break]") && serviceMedia.imageBreaks) media.imageBreaks = serviceMedia.imageBreaks;
+    const reviews = type === "reviews" ? extractReviews(section) : null;
     return {
       section_key: `${String(index + 1).padStart(2, "0")}-${slug(label, "section")}`,
       section_type: type,
@@ -294,7 +315,8 @@ const extractPageModel = async (page) => {
       content: {
         fields,
         faqs: extractFaqs(section),
-        media
+        media,
+        ...(reviews ? { reviews } : {})
       }
     };
   });
@@ -435,6 +457,49 @@ const renderFaqEditor = (section) => {
             <label>Answer<textarea data-faq-field="answer" rows="3">${escapeHtml(faq.answer)}</textarea></label>
           </div>
         `).join("")}
+      </div>
+    </div>
+  `;
+};
+
+const renderReviewsEditor = (section) => {
+  const data = section.content.reviews || { googleUrl: "", yelpUrl: "", items: [] };
+  const reviews = data.items || [];
+  return `
+    <div class="subpanel reviews-editor" data-reviews-editor>
+      <div class="card-head compact">
+        <div><h3>Reviews</h3><p>Manage public Google and Yelp reviews for the Home reviews carousel.</p></div>
+        <button class="btn btn-secondary" type="button" data-add-review>Add Review</button>
+      </div>
+      <div class="form-grid reviews-settings">
+        <label>Google Business Profile URL<input data-review-setting="googleUrl" value="${escapeHtml(data.googleUrl || "")}" placeholder="https://..."></label>
+        <label>Yelp Business Profile URL<input data-review-setting="yelpUrl" value="${escapeHtml(data.yelpUrl || "")}" placeholder="https://..."></label>
+      </div>
+      <div class="reviews-admin-list">
+        ${reviews.map((review, index) => `
+          <article class="review-admin-card ${review.is_visible === false ? "is-hidden" : ""}" data-review-index="${index}">
+            <div class="review-admin-head">
+              <strong>Review ${index + 1}</strong>
+              <div class="row-actions">
+                <button class="btn btn-secondary" type="button" data-review-up="${index}" ${index <= 0 ? "disabled" : ""}>Up</button>
+                <button class="btn btn-secondary" type="button" data-review-down="${index}" ${index >= reviews.length - 1 ? "disabled" : ""}>Down</button>
+                <button class="btn btn-danger" type="button" data-review-delete="${index}">Delete</button>
+              </div>
+            </div>
+            <div class="form-grid">
+              <label>Source<select data-review-field="source">
+                <option value="Google" ${review.source !== "Yelp" ? "selected" : ""}>Google</option>
+                <option value="Yelp" ${review.source === "Yelp" ? "selected" : ""}>Yelp</option>
+              </select></label>
+              <label>Customer name<input data-review-field="name" value="${escapeHtml(review.name || "")}"></label>
+              <label>Star rating<select data-review-field="rating">
+                ${[1, 2, 3, 4, 5].map((rating) => `<option value="${rating}" ${Number(review.rating || 5) === rating ? "selected" : ""}>${rating}</option>`).join("")}
+              </select></label>
+              <label class="toggle-line"><input type="checkbox" data-review-field="is_visible" ${review.is_visible === false ? "" : "checked"}> Show review</label>
+            </div>
+            <label>Review text<textarea data-review-field="text" rows="4">${escapeHtml(review.text || "")}</textarea></label>
+          </article>
+        `).join("") || `<p class="empty-state small">No reviews yet. Add the first review to build the carousel.</p>`}
       </div>
     </div>
   `;
@@ -711,6 +776,7 @@ const renderSectionEditor = () => {
     ${renderFieldPanel("Cards and Bullet Items", "Edit repeated cards, service labels and list items used in this section.", groups.cards)}
     ${renderFieldPanel("Buttons and Links", "Edit button destinations and service links.", groups.links)}
     ${renderFieldPanel("Inline Images", "Edit image URLs and alt text when this section includes inline images.", groups.images)}
+    ${section.section_type === "reviews" ? renderReviewsEditor(section) : ""}
     ${(section.content.faqs || []).length || section.section_type === "faq" ? renderFaqEditor(section) : ""}
     ${renderMediaEditor(section)}
   `;
@@ -739,6 +805,7 @@ const mergeContentWithPublicModel = (publicContent = {}, existingContent = {}) =
   if (publicMedia.imageBreaks && !Object.keys(existingMedia.imageBreaks || {}).length) content.media.imageBreaks = publicMedia.imageBreaks;
 
   if ((publicContent.faqs || []).length && !(existingContent.faqs || []).length) content.faqs = publicContent.faqs;
+  if (publicContent.reviews && !(existingContent.reviews?.items || []).length) content.reviews = publicContent.reviews;
   return content;
 };
 
@@ -956,6 +1023,20 @@ sectionEditor.addEventListener("input", async (event) => {
     section.content.faqs[index][faqField] = event.target.value;
     setDirty();
   }
+  const reviewSetting = event.target.dataset.reviewSetting;
+  if (reviewSetting) {
+    section.content.reviews = section.content.reviews || { googleUrl: "", yelpUrl: "", items: [] };
+    section.content.reviews[reviewSetting] = event.target.value;
+    setDirty();
+  }
+  const reviewField = event.target.dataset.reviewField;
+  if (reviewField) {
+    section.content.reviews = section.content.reviews || { googleUrl: "", yelpUrl: "", items: [] };
+    const index = Number(event.target.closest("[data-review-index]").dataset.reviewIndex);
+    const review = section.content.reviews.items[index];
+    if (review) review[reviewField] = reviewField === "rating" ? Number(event.target.value) : event.target.value;
+    setDirty();
+  }
   const mediaField = event.target.dataset.mediaField;
   if (mediaField) {
     const row = event.target.closest("[data-media-kind]");
@@ -1005,6 +1086,14 @@ sectionEditor.addEventListener("change", async (event) => {
     section.is_visible = event.target.checked;
     setDirty();
     renderSections();
+  }
+  const reviewField = event.target.dataset.reviewField;
+  if (reviewField) {
+    section.content.reviews = section.content.reviews || { googleUrl: "", yelpUrl: "", items: [] };
+    const index = Number(event.target.closest("[data-review-index]").dataset.reviewIndex);
+    const review = section.content.reviews.items[index];
+    if (review) review[reviewField] = reviewField === "is_visible" ? event.target.checked : (reviewField === "rating" ? Number(event.target.value) : event.target.value);
+    setDirty();
   }
   if ((event.target.matches("[data-media-upload]") || event.target.matches("[data-media-upload-before]") || event.target.matches("[data-media-upload-after]")) && event.target.files?.[0]) {
     const row = event.target.closest("[data-media-kind]");
@@ -1065,6 +1154,18 @@ sectionEditor.addEventListener("click", (event) => {
     section.content.faqs.push({ question: "New question", answer: "New answer" });
     setDirty(); renderSectionEditor();
   }
+  if (event.target.matches("[data-add-review]")) {
+    section.content.reviews = section.content.reviews || { googleUrl: "", yelpUrl: "", items: [] };
+    section.content.reviews.items = section.content.reviews.items || [];
+    section.content.reviews.items.push({ source: "Google", name: "Customer name", rating: 5, text: "Add review text here.", is_visible: true });
+    setDirty(); renderSectionEditor();
+  }
+  const reviewUp = event.target.dataset.reviewUp;
+  const reviewDown = event.target.dataset.reviewDown;
+  const reviewDelete = event.target.dataset.reviewDelete;
+  if (reviewUp !== undefined) { moveItem(section.content.reviews.items, Number(reviewUp), -1); setDirty(); renderSectionEditor(); }
+  if (reviewDown !== undefined) { moveItem(section.content.reviews.items, Number(reviewDown), 1); setDirty(); renderSectionEditor(); }
+  if (reviewDelete !== undefined) { section.content.reviews.items.splice(Number(reviewDelete), 1); setDirty(); renderSectionEditor(); }
   ["faqUp", "faqDown", "faqDelete"].forEach(() => {});
   const faqUp = event.target.dataset.faqUp;
   const faqDown = event.target.dataset.faqDown;
