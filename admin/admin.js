@@ -640,6 +640,15 @@ const updateBeforeAfterDivider = (frame, clientX) => {
   const percent = Math.min(95, Math.max(5, ((clientX - rect.left) / rect.width) * 100));
   frame.style.setProperty("--ba-divider", `${percent}%`);
 };
+const resetBeforeAfterUploadFraming = (item, phase) => {
+  if (!item || !phase) return;
+  item.shared_zoom = 1;
+  item.zoom = 1;
+  item[`${phase}_zoom`] = 1;
+  item[`${phase}_position_x`] = 50;
+  item[`${phase}_position_y`] = 50;
+};
+
 const updateBeforeAfterPreview = (row, item) => {
   if (!row || !item) return;
   ["before", "after"].forEach((phase) => {
@@ -889,17 +898,91 @@ const loadDefaultsFromSite = async (markDirty = true) => {
   renderAll();
 };
 
-const uploadMedia = async (file) => {
-  const ext = file.name.split(".").pop() || "jpg";
+const imageExtensionForType = (type = "") => {
+  if (type.includes("avif")) return "avif";
+  if (type.includes("webp")) return "webp";
+  if (type.includes("png")) return "png";
+  return "jpg";
+};
+
+const canvasToBlob = (canvas, type, quality) => new Promise((resolve) => {
+  canvas.toBlob((blob) => resolve(blob), type, quality);
+});
+
+const supportsCanvasImageType = async (type) => {
+  const canvas = document.createElement("canvas");
+  canvas.width = 1;
+  canvas.height = 1;
+  const blob = await canvasToBlob(canvas, type, 0.8);
+  return Boolean(blob && blob.type === type);
+};
+
+const imageBitmapFromFile = async (file) => {
+  if (window.createImageBitmap) {
+    try {
+      return await createImageBitmap(file, { imageOrientation: "from-image" });
+    } catch {}
+  }
+  const url = URL.createObjectURL(file);
+  try {
+    const image = new Image();
+    image.decoding = "async";
+    image.src = url;
+    await image.decode();
+    return image;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+};
+
+const optimizeBeforeAfterUpload = async (file) => {
+  if (!file.type?.startsWith("image/")) return { file, width: null, height: null, originalSize: file.size, uploadedSize: file.size };
+  const source = await imageBitmapFromFile(file);
+  const width = source.width || source.naturalWidth;
+  const height = source.height || source.naturalHeight;
+  if (!width || !height) return { file, width: null, height: null, originalSize: file.size, uploadedSize: file.size };
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext("2d", { alpha: true });
+  context.drawImage(source, 0, 0, width, height);
+  source.close?.();
+
+  const candidates = [];
+  if (await supportsCanvasImageType("image/avif")) candidates.push(["image/avif", 0.78]);
+  if (await supportsCanvasImageType("image/webp")) candidates.push(["image/webp", 0.86]);
+  candidates.push([file.type === "image/png" ? "image/png" : "image/jpeg", file.type === "image/png" ? undefined : 0.86]);
+
+  let bestBlob = null;
+  for (const [type, quality] of candidates) {
+    const blob = await canvasToBlob(canvas, type, quality);
+    if (!blob) continue;
+    if (!bestBlob || blob.size < bestBlob.size) bestBlob = blob;
+  }
+
+  if (!bestBlob || bestBlob.size >= file.size) return { file, width, height, originalSize: file.size, uploadedSize: file.size };
+  const baseName = file.name.replace(/\.[^.]+$/, "") || "before-after-image";
+  const optimizedFile = new File([bestBlob], baseName + "." + imageExtensionForType(bestBlob.type), {
+    type: bestBlob.type,
+    lastModified: Date.now()
+  });
+  return { file: optimizedFile, width, height, originalSize: file.size, uploadedSize: optimizedFile.size };
+};
+
+const uploadMedia = async (file, options = {}) => {
+  const prepared = options.optimizeBeforeAfter ? await optimizeBeforeAfterUpload(file) : { file, width: null, height: null, originalSize: file.size, uploadedSize: file.size };
+  const uploadFile = prepared.file;
+  const ext = imageExtensionForType(uploadFile.type) || uploadFile.name.split(".").pop() || "jpg";
   const path = `before-after/${currentPageKey}-${Date.now()}-${Math.random().toString(16).slice(2)}.${ext}`;
-  const { error } = await client.storage.from(STORAGE_BUCKET).upload(path, file, {
+  const { error } = await client.storage.from(STORAGE_BUCKET).upload(path, uploadFile, {
     cacheControl: "31536000",
     upsert: false,
-    contentType: file.type || undefined
+    contentType: uploadFile.type || undefined
   });
   if (error) throw error;
   const { data } = client.storage.from(STORAGE_BUCKET).getPublicUrl(path);
-  return data.publicUrl;
+  return { url: data.publicUrl, ...prepared, file: uploadFile };
 };
 
 const savePage = async () => {
@@ -1101,36 +1184,68 @@ sectionEditor.addEventListener("change", async (event) => {
     const index = Number(row.dataset.mediaIndex);
     const collection = kind === "images" ? section.content.media.images : section.content.media[kind];
     let phase = null;
+    let previousSource = null;
+    let previousFraming = null;
+    let localUrl = null;
     if (kind === "beforeAfter") {
       phase = event.target.matches("[data-media-upload-after]") ? "after" : "before";
-      const localUrl = URL.createObjectURL(event.target.files[0]);
-      row.querySelectorAll(`[data-ba-preview-image="${phase}"]`).forEach((img) => { img.src = localUrl; });
+      previousFraming = {
+        shared_zoom: collection[index].shared_zoom,
+        zoom: collection[index].zoom,
+        [`${phase}_zoom`]: collection[index][`${phase}_zoom`],
+        [`${phase}_position_x`]: collection[index][`${phase}_position_x`],
+        [`${phase}_position_y`]: collection[index][`${phase}_position_y`]
+      };
+      resetBeforeAfterUploadFraming(collection[index], phase);
+      previousSource = beforeAfterImage(collection[index], phase);
+      localUrl = URL.createObjectURL(event.target.files[0]);
+      if (phase === "before") collection[index].beforeSrc = localUrl;
+      else collection[index].afterSrc = localUrl;
+      updateBeforeAfterPreview(row, collection[index]);
     }
     setMessage(statusMessage, "Uploading image...");
     try {
-      const url = await uploadMedia(event.target.files[0]);
-      if (event.target.matches("[data-media-upload-before]")) collection[index].beforeSrc = url;
-      else if (event.target.matches("[data-media-upload-after]")) collection[index].afterSrc = url;
-      else if (kind === "beforeAfter" && !collection[index].beforeSrc) collection[index].beforeSrc = url;
+      const upload = await uploadMedia(event.target.files[0], { optimizeBeforeAfter: kind === "beforeAfter" });
+      const url = upload.url;
+      if (event.target.matches("[data-media-upload-before]")) {
+        collection[index].beforeSrc = url;
+        collection[index].beforeWidth = upload.width;
+        collection[index].beforeHeight = upload.height;
+      } else if (event.target.matches("[data-media-upload-after]")) {
+        collection[index].afterSrc = url;
+        collection[index].afterWidth = upload.width;
+        collection[index].afterHeight = upload.height;
+      } else if (kind === "beforeAfter" && !collection[index].beforeSrc) collection[index].beforeSrc = url;
       else collection[index].src = url;
       if (kind === "beforeAfter") {
         const input = row.querySelector(`[data-media-url-input="${phase}"]`);
         if (input) input.value = url;
         updateBeforeAfterPreview(row, collection[index]);
+        if (localUrl) URL.revokeObjectURL(localUrl);
       }
       setDirty();
       setMessage(statusMessage, "Image uploaded.", "success");
       renderSectionEditor();
     } catch (error) {
+      if (kind === "beforeAfter" && phase && localUrl) {
+        if (phase === "before") collection[index].beforeSrc = previousSource;
+        else collection[index].afterSrc = previousSource;
+        Object.entries(previousFraming || {}).forEach(([key, value]) => {
+          if (value === undefined) delete collection[index][key];
+          else collection[index][key] = value;
+        });
+        updateBeforeAfterPreview(row, collection[index]);
+        URL.revokeObjectURL(localUrl);
+      }
       setMessage(statusMessage, error.message, "error");
     }
   }
   if (event.target.matches("[data-image-break-upload]") && event.target.files?.[0]) {
     setMessage(statusMessage, "Uploading image...");
     try {
-      const url = await uploadMedia(event.target.files[0]);
+      const upload = await uploadMedia(event.target.files[0]);
       const key = event.target.closest("[data-image-break-key]").dataset.imageBreakKey;
-      section.content.media.imageBreaks[key].src = url;
+      section.content.media.imageBreaks[key].src = upload.url;
       setDirty();
       setMessage(statusMessage, "Image uploaded.", "success");
       renderSectionEditor();
