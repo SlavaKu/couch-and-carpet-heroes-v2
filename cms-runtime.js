@@ -123,10 +123,12 @@
   const mediaAlt = (item, phase) => item[`${phase}Alt`] || item[`${phase}_alt`] || `${phase} cleaning image`;
   const framingStyle = (item, phase) => {
     const shared = Number(item.shared_zoom ?? item.zoom ?? 1) || 1;
-    const zoom = shared * (Number(item[`${phase}_zoom`]) || 1);
+    const phaseZoom = Number(item[`${phase}_zoom`] ?? 1) || 1;
     const x = Number(item[`${phase}_position_x`] ?? 50);
     const y = Number(item[`${phase}_position_y`] ?? 50);
-    return `object-position: ${x}% ${y}%; transform: scale(${zoom}); transform-origin: ${x}% ${y}%;`;
+    const offsetX = (50 - x) * 1.4;
+    const offsetY = (50 - y) * 1.4;
+    return `--ba-scale:${shared * phaseZoom}; --ba-x:${offsetX}%; --ba-y:${offsetY}%; object-position:${x}% ${y}%; transform:translate(var(--ba-x), var(--ba-y)) scale(var(--ba-scale)); transform-origin:center center;`;
   };
 
   const renderHomepageBeforeAfter = (section, items = []) => {

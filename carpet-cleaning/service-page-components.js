@@ -38,6 +38,23 @@ const escapeServiceComponentText = (value) => String(value ?? "").replace(/[&<>"
   "'": "&#039;"
 })[char]);
 
+
+const serviceFramingNumber = (value, fallback, min, max) => {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return fallback;
+  return Math.min(max, Math.max(min, number));
+};
+
+const serviceFramingStyle = (item, phase) => {
+  const shared = serviceFramingNumber(item.shared_zoom ?? item.zoom, 1, 1, 3);
+  const phaseZoom = serviceFramingNumber(item[`${phase}_zoom`], 1, 1, 3);
+  const x = serviceFramingNumber(item[`${phase}_position_x`], 50, 0, 100);
+  const y = serviceFramingNumber(item[`${phase}_position_y`], 50, 0, 100);
+  const offsetX = (50 - x) * 1.4;
+  const offsetY = (50 - y) * 1.4;
+  return `--ba-scale:${shared * phaseZoom}; --ba-x:${offsetX}%; --ba-y:${offsetY}%; object-position:${x}% ${y}%; transform:translate(var(--ba-x), var(--ba-y)) scale(var(--ba-scale)); transform-origin:center center;`;
+};
+
 const buildResponsiveImageAttrs = (item, isHero = false) => {
   const srcset = item.srcset ? ` srcset="${escapeServiceComponentText(item.srcset)}"` : "";
   const sizes = item.sizes ? ` sizes="${escapeServiceComponentText(item.sizes)}"` : "";
@@ -66,9 +83,9 @@ const renderServiceBeforeAfter = (root, items) => {
           <article class="ba-slide ${index === 0 ? "is-active" : ""}" data-service-ba-slide aria-hidden="${index === 0 ? "false" : "true"}">
               <div class="ba-slider-card">
                 <div class="ba-slider" data-service-ba-slider style="--position: 50%; --position-num: .5;">
-                <img class="ba-slider-img" src="${escapeServiceComponentText(item.afterSrc)}" alt="${escapeServiceComponentText(item.afterAlt)}"${buildResponsiveImageAttrs({ srcset: item.afterSrcset, sizes: item.sizes }, index === 0)}>
+                <img class="ba-slider-img" src="${escapeServiceComponentText(item.afterSrc)}" alt="${escapeServiceComponentText(item.afterAlt)}" style="${serviceFramingStyle(item, "after")}"${buildResponsiveImageAttrs({ srcset: item.afterSrcset, sizes: item.sizes }, index === 0)}>
                 <div class="ba-slider-after">
-                  <img class="ba-slider-img" src="${escapeServiceComponentText(item.beforeSrc)}" alt="${escapeServiceComponentText(item.beforeAlt)}"${buildResponsiveImageAttrs({ srcset: item.beforeSrcset, sizes: item.sizes }, index === 0)}>
+                  <img class="ba-slider-img" src="${escapeServiceComponentText(item.beforeSrc)}" alt="${escapeServiceComponentText(item.beforeAlt)}" style="${serviceFramingStyle(item, "before")}"${buildResponsiveImageAttrs({ srcset: item.beforeSrcset, sizes: item.sizes }, index === 0)}>
                 </div>
                 <span class="ba-label ba-label-before">Before</span>
                 <span class="ba-label ba-label-after">After</span>

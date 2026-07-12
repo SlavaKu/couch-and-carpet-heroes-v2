@@ -423,10 +423,12 @@ if (calculator) {
 
   const imageFramingStyle = (project, phase) => {
     const sharedZoom = framingZoom(project.shared_zoom);
-    const zoom = framingZoom(project[`${phase}_zoom`]) * sharedZoom;
+    const phaseZoom = framingZoom(project[`${phase}_zoom`]);
     const x = framingPercent(project[`${phase}_position_x`]);
     const y = framingPercent(project[`${phase}_position_y`]);
-    return `object-position: ${x}% ${y}%; transform: scale(${zoom}); transform-origin: ${x}% ${y}%;`;
+    const offsetX = (50 - x) * 1.4;
+    const offsetY = (50 - y) * 1.4;
+    return `--ba-scale:${sharedZoom * phaseZoom}; --ba-x:${offsetX}%; --ba-y:${offsetY}%; object-position:${x}% ${y}%; transform:translate(var(--ba-x), var(--ba-y)) scale(var(--ba-scale)); transform-origin:center center;`;
   };
 
   const applyBeforeAfterProjects = (projects) => {
