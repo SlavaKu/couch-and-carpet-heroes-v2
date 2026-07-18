@@ -141,14 +141,14 @@
         <div class="ba-slider-card">
           <div class="ba-slider" data-ba-slider style="--position: 50%; --position-num: .5;">
             <div class="ba-slider-base">
-              <img class="ba-slider-img" src="${escapeHtml(mediaSrc(item, "after"))}" alt="${escapeHtml(mediaAlt(item, "after"))}" loading="${index === 0 ? "eager" : "lazy"}" decoding="async" style="${framingStyle(item, "after")}">
-            </div>
-            <div class="ba-slider-after">
               <img class="ba-slider-img" src="${escapeHtml(mediaSrc(item, "before"))}" alt="${escapeHtml(mediaAlt(item, "before"))}" loading="${index === 0 ? "eager" : "lazy"}" decoding="async" style="${framingStyle(item, "before")}">
+            </div>
+            <div class="ba-slider-reveal">
+              <img class="ba-slider-img" src="${escapeHtml(mediaSrc(item, "after"))}" alt="${escapeHtml(mediaAlt(item, "after"))}" loading="${index === 0 ? "eager" : "lazy"}" decoding="async" style="${framingStyle(item, "after")}">
             </div>
             <span class="ba-label ba-label-before">Before</span>
             <span class="ba-label ba-label-after">After</span>
-            <div class="ba-divider" aria-hidden="true"></div>
+            <div class="ba-slider-divider ba-divider" aria-hidden="true"></div>
             <input class="ba-range" type="range" min="1" max="99" value="50" aria-label="Compare ${escapeHtml(item.title || "cleaning result")} before and after">
           </div>
           <div class="ba-title">${escapeHtml(item.title || item.caption || "Before & After Result")}</div>

@@ -1086,6 +1086,8 @@ label { font-weight: 800; color: var(--navy); font-size: 14px; }
   overflow: hidden;
   border-radius: 22px;
   background: #e5e7eb;
+  isolation: isolate;
+  contain: paint;
   user-select: none;
 }
 .ba-slider-img {
@@ -1096,32 +1098,20 @@ label { font-weight: 800; color: var(--navy); font-size: 14px; }
   object-fit: contain;
 }
 .ba-slider-base,
-.ba-slider-after {
+.ba-slider-reveal {
   position: absolute;
-  top: 0;
-  bottom: 0;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
   border-radius: inherit;
 }
 .ba-slider-base {
-  right: 0;
-  width: calc(100% - var(--position));
+  z-index: 1;
 }
-.ba-slider-after {
-  left: 0;
-  width: var(--position);
-}
-.ba-slider-base .ba-slider-img {
-  left: auto;
-  right: 0;
-  width: calc(100% / (1 - var(--position-num, .5)));
-  min-width: 100%;
-  max-width: none;
-}
-.ba-slider-after .ba-slider-img {
-  width: calc(100% / (var(--position-num, .5)));
-  min-width: 100%;
-  max-width: none;
+.ba-slider-reveal {
+  z-index: 2;
+  clip-path: inset(0 0 0 var(--position));
 }
 .ba-divider {
   position: absolute;
@@ -1131,7 +1121,7 @@ label { font-weight: 800; color: var(--navy); font-size: 14px; }
   width: 4px;
   background: white;
   transform: translateX(-50%);
-  box-shadow: 0 0 0 999px rgba(0,0,0,0);
+  z-index: 5;
 }
 .ba-divider::after {
   content: "\2194";
