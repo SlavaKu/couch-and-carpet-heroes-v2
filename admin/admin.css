@@ -468,7 +468,8 @@ input:focus, textarea:focus, select:focus {
 .ba-label-after {
   position: absolute;
   top: 14px;
-  z-index: 2;
+  z-index: 6;
+  pointer-events: none;
   padding: 7px 10px;
   border-radius: 999px;
   background: rgba(16, 16, 16, .76);

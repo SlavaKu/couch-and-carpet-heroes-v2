@@ -636,6 +636,7 @@ const renderBeforeAfterEditor = (section, items = []) => {
           </div>
           <div class="ba-public-preview" aria-label="Before and after public preview">
             <div class="ba-public-frame" data-ba-public-frame style="--ba-divider:50%;">
+              <span class="ba-label-before">Before</span>
               <div class="ba-media-frame">
                 <div class="ba-slider-base ba-public-before">
                   <img class="ba-slider-img" data-ba-preview-image="before" src="${escapeHtml(beforeAfterImage(item, "before"))}" alt="" style="${beforeAfterStyle(item, "before")}">
@@ -643,11 +644,10 @@ const renderBeforeAfterEditor = (section, items = []) => {
                 <div class="ba-slider-reveal ba-public-after">
                   <img class="ba-slider-img" data-ba-preview-image="after" src="${escapeHtml(beforeAfterImage(item, "after"))}" alt="" style="${beforeAfterStyle(item, "after")}">
                 </div>
-                <span class="ba-label-before">Before</span>
-                <span class="ba-label-after">After</span>
                 <span class="ba-public-divider"></span>
                 <button class="ba-public-handle" type="button" aria-label="Drag before after divider" data-ba-divider-handle></button>
               </div>
+              <span class="ba-label-after">After</span>
             </div>
             <p>${escapeHtml(item.title || item.caption || item.beforeCaption || item.afterCaption || "Before / After preview")}</p>
           </div>

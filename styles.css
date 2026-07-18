@@ -1164,6 +1164,8 @@ label { font-weight: 800; color: var(--navy); font-size: 14px; }
 .ba-label {
   position: absolute;
   top: 18px;
+  z-index: 6;
+  pointer-events: none;
   padding: 8px 12px;
   border-radius: 999px;
   color: white;

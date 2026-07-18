@@ -495,6 +495,7 @@ if (calculator) {
         <article class="ba-slide ${index === 0 ? "is-active" : ""}" data-ba-slide>
           <div class="ba-slider-card">
             <div class="ba-slider" data-ba-slider style="--position: 50%; --position-num: .5;">
+              <span class="ba-label ba-label-before">Before</span>
               <div class="ba-media-frame">
                 <div class="ba-slider-base">
                   <img class="ba-slider-img" src="${escapeCmsText(project.before_image_url)}" alt="${escapeCmsText(project.title || "Before cleaning")} before cleaning" loading="${index === 0 ? "eager" : "lazy"}" decoding="async" style="${imageFramingStyle(project, "before")}"${index === 0 ? ' fetchpriority="high"' : ""}>
@@ -502,11 +503,10 @@ if (calculator) {
                 <div class="ba-slider-reveal">
                   <img class="ba-slider-img" src="${escapeCmsText(project.after_image_url)}" alt="${escapeCmsText(project.title || "After cleaning")} after cleaning" loading="${index === 0 ? "eager" : "lazy"}" decoding="async" style="${imageFramingStyle(project, "after")}">
                 </div>
-                <span class="ba-label ba-label-before">Before</span>
-                <span class="ba-label ba-label-after">After</span>
                 <div class="ba-slider-divider ba-divider" aria-hidden="true"></div>
                 <input class="ba-range" type="range" min="1" max="99" value="50" aria-label="Compare ${escapeCmsText(project.title || "cleaning result")} before and after">
               </div>
+              <span class="ba-label ba-label-after">After</span>
             </div>
             <div class="ba-title">${escapeCmsText(project.title || "Before & After Result")}</div>
           </div>

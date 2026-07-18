@@ -83,6 +83,7 @@ const renderServiceBeforeAfter = (root, items) => {
           <article class="ba-slide ${index === 0 ? "is-active" : ""}" data-service-ba-slide aria-hidden="${index === 0 ? "false" : "true"}">
               <div class="ba-slider-card">
                 <div class="ba-slider" data-service-ba-slider style="--position: 50%; --position-num: .5;">
+                  <span class="ba-label ba-label-before">Before</span>
                   <div class="ba-media-frame">
                     <div class="ba-slider-base">
                       <img class="ba-slider-img" src="${escapeServiceComponentText(item.beforeSrc)}" alt="${escapeServiceComponentText(item.beforeAlt)}" style="${serviceFramingStyle(item, "before")}"${buildResponsiveImageAttrs({ srcset: item.beforeSrcset, sizes: item.sizes }, index === 0)}>
@@ -90,11 +91,10 @@ const renderServiceBeforeAfter = (root, items) => {
                     <div class="ba-slider-reveal">
                       <img class="ba-slider-img" src="${escapeServiceComponentText(item.afterSrc)}" alt="${escapeServiceComponentText(item.afterAlt)}" style="${serviceFramingStyle(item, "after")}"${buildResponsiveImageAttrs({ srcset: item.afterSrcset, sizes: item.sizes }, index === 0)}>
                     </div>
-                    <span class="ba-label ba-label-before">Before</span>
-                    <span class="ba-label ba-label-after">After</span>
                     <div class="ba-slider-divider ba-divider" aria-hidden="true"></div>
                     <input class="ba-range" type="range" min="1" max="99" value="50" aria-label="Compare ${escapeServiceComponentText(item.title)} before and after">
                   </div>
+                  <span class="ba-label ba-label-after">After</span>
               </div>
               <div class="ba-title">${escapeServiceComponentText(item.title)}</div>
             </div>
