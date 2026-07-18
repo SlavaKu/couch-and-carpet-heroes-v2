@@ -21,6 +21,20 @@ const initializeBeforeAfterSlider = (slider) => {
   if (slider.dataset.baSliderReady === "true") return;
   slider.dataset.baSliderReady = "true";
 
+  const mediaFrame = () => slider.querySelector(".ba-media-frame") || slider;
+  const updateMediaFrame = () => {
+    const frame = mediaFrame();
+    if (frame === slider) return;
+    const referenceImage = frame.querySelector(".ba-slider-base .ba-slider-img") || frame.querySelector(".ba-slider-img");
+    const naturalWidth = referenceImage?.naturalWidth || 0;
+    const naturalHeight = referenceImage?.naturalHeight || 0;
+    const availableWidth = slider.clientWidth;
+    const availableHeight = slider.clientHeight;
+    if (!naturalWidth || !naturalHeight || !availableWidth || !availableHeight) return;
+    const scale = Math.min(availableWidth / naturalWidth, availableHeight / naturalHeight);
+    frame.style.setProperty("--ba-frame-width", `${naturalWidth * scale}px`);
+    frame.style.setProperty("--ba-frame-height", `${naturalHeight * scale}px`);
+  };
   const clampPosition = (value) => Math.min(99, Math.max(1, Number(value) || 50));
   const update = (nextValue = range.value) => {
     const value = clampPosition(nextValue);
@@ -29,7 +43,7 @@ const initializeBeforeAfterSlider = (slider) => {
     slider.style.setProperty("--position-num", String(value / 100));
   };
   const updateFromPointer = (event) => {
-    const rect = slider.getBoundingClientRect();
+    const rect = mediaFrame().getBoundingClientRect();
     if (!rect.width) return;
     update(((event.clientX - rect.left) / rect.width) * 100);
   };
@@ -55,7 +69,13 @@ const initializeBeforeAfterSlider = (slider) => {
   });
   slider.addEventListener("pointerup", stopDragging);
   slider.addEventListener("pointercancel", stopDragging);
+  slider.querySelectorAll(".ba-slider-img").forEach((image) => {
+    if (image.complete) updateMediaFrame();
+    image.addEventListener("load", updateMediaFrame, { once: true });
+  });
+  window.addEventListener("resize", updateMediaFrame);
   update();
+  updateMediaFrame();
 };
 
 const initializeBeforeAfterCarousel = (carousel) => {
@@ -475,16 +495,18 @@ if (calculator) {
         <article class="ba-slide ${index === 0 ? "is-active" : ""}" data-ba-slide>
           <div class="ba-slider-card">
             <div class="ba-slider" data-ba-slider style="--position: 50%; --position-num: .5;">
-              <div class="ba-slider-base">
-                <img class="ba-slider-img" src="${escapeCmsText(project.before_image_url)}" alt="${escapeCmsText(project.title || "Before cleaning")} before cleaning" loading="${index === 0 ? "eager" : "lazy"}" decoding="async" style="${imageFramingStyle(project, "before")}"${index === 0 ? ' fetchpriority="high"' : ""}>
+              <div class="ba-media-frame">
+                <div class="ba-slider-base">
+                  <img class="ba-slider-img" src="${escapeCmsText(project.before_image_url)}" alt="${escapeCmsText(project.title || "Before cleaning")} before cleaning" loading="${index === 0 ? "eager" : "lazy"}" decoding="async" style="${imageFramingStyle(project, "before")}"${index === 0 ? ' fetchpriority="high"' : ""}>
+                </div>
+                <div class="ba-slider-reveal">
+                  <img class="ba-slider-img" src="${escapeCmsText(project.after_image_url)}" alt="${escapeCmsText(project.title || "After cleaning")} after cleaning" loading="${index === 0 ? "eager" : "lazy"}" decoding="async" style="${imageFramingStyle(project, "after")}">
+                </div>
+                <span class="ba-label ba-label-before">Before</span>
+                <span class="ba-label ba-label-after">After</span>
+                <div class="ba-slider-divider ba-divider" aria-hidden="true"></div>
+                <input class="ba-range" type="range" min="1" max="99" value="50" aria-label="Compare ${escapeCmsText(project.title || "cleaning result")} before and after">
               </div>
-              <div class="ba-slider-reveal">
-                <img class="ba-slider-img" src="${escapeCmsText(project.after_image_url)}" alt="${escapeCmsText(project.title || "After cleaning")} after cleaning" loading="${index === 0 ? "eager" : "lazy"}" decoding="async" style="${imageFramingStyle(project, "after")}">
-              </div>
-              <span class="ba-label ba-label-before">Before</span>
-              <span class="ba-label ba-label-after">After</span>
-              <div class="ba-slider-divider ba-divider" aria-hidden="true"></div>
-              <input class="ba-range" type="range" min="1" max="99" value="50" aria-label="Compare ${escapeCmsText(project.title || "cleaning result")} before and after">
             </div>
             <div class="ba-title">${escapeCmsText(project.title || "Before & After Result")}</div>
           </div>

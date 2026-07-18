@@ -521,6 +521,25 @@ const beforeAfterStyle = (item, phase) => {
   const offsetY = (50 - y) * 1.4;
   return `--ba-scale:${shared * phaseZoom}; --ba-x:${offsetX}%; --ba-y:${offsetY}%; object-position:${x}% ${y}%; transform:translate(var(--ba-x), var(--ba-y)) scale(var(--ba-scale)); transform-origin:center center;`;
 };
+const updateBeforeAfterMediaFrame = (root) => {
+  const scope = root || document;
+  scope.querySelectorAll(".ba-public-frame, .ba-slider").forEach((frameRoot) => {
+    const mediaFrame = frameRoot.querySelector(".ba-media-frame");
+    if (!mediaFrame) return;
+    const referenceImage = mediaFrame.querySelector(".ba-slider-base .ba-slider-img, .ba-public-before .ba-slider-img, [data-ba-preview-image='before']");
+    const naturalWidth = referenceImage?.naturalWidth || 0;
+    const naturalHeight = referenceImage?.naturalHeight || 0;
+    const availableWidth = frameRoot.clientWidth;
+    const availableHeight = frameRoot.clientHeight;
+    if (referenceImage && !referenceImage.complete) {
+      referenceImage.addEventListener("load", () => updateBeforeAfterMediaFrame(frameRoot), { once: true });
+    }
+    if (!naturalWidth || !naturalHeight || !availableWidth || !availableHeight) return;
+    const scale = Math.min(availableWidth / naturalWidth, availableHeight / naturalHeight);
+    mediaFrame.style.setProperty("--ba-frame-width", `${naturalWidth * scale}px`);
+    mediaFrame.style.setProperty("--ba-frame-height", `${naturalHeight * scale}px`);
+  });
+};
 const clampBeforeAfterIndex = (section, items) => {
   const key = section.section_key;
   const current = activeBeforeAfterIndexBySection[key] ?? 0;
@@ -617,14 +636,18 @@ const renderBeforeAfterEditor = (section, items = []) => {
           </div>
           <div class="ba-public-preview" aria-label="Before and after public preview">
             <div class="ba-public-frame" data-ba-public-frame style="--ba-divider:50%;">
-              <img data-ba-preview-image="after" src="${escapeHtml(beforeAfterImage(item, "after"))}" alt="" style="${beforeAfterStyle(item, "after")}">
-              <div class="ba-public-before">
-                <img data-ba-preview-image="before" src="${escapeHtml(beforeAfterImage(item, "before"))}" alt="" style="${beforeAfterStyle(item, "before")}">
+              <div class="ba-media-frame">
+                <div class="ba-slider-base ba-public-before">
+                  <img class="ba-slider-img" data-ba-preview-image="before" src="${escapeHtml(beforeAfterImage(item, "before"))}" alt="" style="${beforeAfterStyle(item, "before")}">
+                </div>
+                <div class="ba-slider-reveal ba-public-after">
+                  <img class="ba-slider-img" data-ba-preview-image="after" src="${escapeHtml(beforeAfterImage(item, "after"))}" alt="" style="${beforeAfterStyle(item, "after")}">
+                </div>
+                <span class="ba-label-before">Before</span>
+                <span class="ba-label-after">After</span>
+                <span class="ba-public-divider"></span>
+                <button class="ba-public-handle" type="button" aria-label="Drag before after divider" data-ba-divider-handle></button>
               </div>
-              <span class="ba-label-before">Before</span>
-              <span class="ba-label-after">After</span>
-              <span class="ba-public-divider"></span>
-              <button class="ba-public-handle" type="button" aria-label="Drag before after divider" data-ba-divider-handle></button>
             </div>
             <p>${escapeHtml(item.title || item.caption || item.beforeCaption || item.afterCaption || "Before / After preview")}</p>
           </div>
@@ -657,8 +680,10 @@ const updateBeforeAfterPreview = (row, item) => {
     row.querySelectorAll(`[data-ba-preview-image="${phase}"]`).forEach((img) => {
       img.src = src;
       img.setAttribute("style", style);
+      img.addEventListener("load", () => updateBeforeAfterMediaFrame(row), { once: true });
     });
   });
+  updateBeforeAfterMediaFrame(row);
   row.querySelectorAll("input[type='range']").forEach((input) => {
     const output = input.closest("label")?.querySelector("output");
     if (output) output.textContent = input.value;
@@ -851,6 +876,7 @@ const renderAll = () => {
   renderSeo();
   renderSections();
   renderSectionEditor();
+  requestAnimationFrame(() => updateBeforeAfterMediaFrame(sectionEditor));
 };
 
 const loadPages = async () => {
