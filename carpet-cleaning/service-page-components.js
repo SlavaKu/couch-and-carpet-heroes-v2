@@ -115,15 +115,7 @@ const initializeServiceBeforeAfter = (carousel) => {
   if (!slides.length || !dotsRoot) return;
 
   carousel.querySelectorAll("[data-service-ba-slider]").forEach((slider) => {
-    const range = slider.querySelector(".ba-range");
-    if (!range) return;
-    const update = () => {
-      const value = Number(range.value);
-      slider.style.setProperty("--position", `${value}%`);
-      slider.style.setProperty("--position-num", String(value / 100));
-    };
-    range.addEventListener("input", update);
-    update();
+    window.initializeBeforeAfterSlider?.(slider);
   });
 
   let activeIndex = slides.findIndex((slide) => slide.classList.contains("is-active"));

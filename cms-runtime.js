@@ -155,17 +155,7 @@
         </div>
       </article>
     `).join("");
-    carousel.querySelectorAll("[data-ba-slider]").forEach((slider) => {
-      const range = slider.querySelector(".ba-range");
-      if (!range) return;
-      const update = () => {
-        const value = Number(range.value);
-        slider.style.setProperty("--position", `${value}%`);
-        slider.style.setProperty("--position-num", String(value / 100));
-      };
-      range.addEventListener("input", update);
-      update();
-    });
+    carousel.querySelectorAll("[data-ba-slider]").forEach((slider) => window.initializeBeforeAfterSlider?.(slider));
     window.initializeBeforeAfterCarousel?.(carousel);
   };
 

@@ -18,12 +18,43 @@ mainNav?.querySelectorAll("a").forEach((link) => {
 const initializeBeforeAfterSlider = (slider) => {
   const range = slider.querySelector(".ba-range");
   if (!range) return;
-  const update = () => {
-    const value = Number(range.value);
+  if (slider.dataset.baSliderReady === "true") return;
+  slider.dataset.baSliderReady = "true";
+
+  const clampPosition = (value) => Math.min(99, Math.max(1, Number(value) || 50));
+  const update = (nextValue = range.value) => {
+    const value = clampPosition(nextValue);
+    range.value = String(value);
     slider.style.setProperty("--position", `${value}%`);
     slider.style.setProperty("--position-num", String(value / 100));
   };
+  const updateFromPointer = (event) => {
+    const rect = slider.getBoundingClientRect();
+    if (!rect.width) return;
+    update(((event.clientX - rect.left) / rect.width) * 100);
+  };
+  let isDragging = false;
+  const stopDragging = (event) => {
+    if (!isDragging) return;
+    isDragging = false;
+    slider.releasePointerCapture?.(event.pointerId);
+  };
+
   range.addEventListener("input", update);
+  slider.addEventListener("pointerdown", (event) => {
+    if (event.button !== undefined && event.button !== 0) return;
+    isDragging = true;
+    slider.setPointerCapture?.(event.pointerId);
+    updateFromPointer(event);
+    event.preventDefault();
+  });
+  slider.addEventListener("pointermove", (event) => {
+    if (!isDragging) return;
+    updateFromPointer(event);
+    event.preventDefault();
+  });
+  slider.addEventListener("pointerup", stopDragging);
+  slider.addEventListener("pointercancel", stopDragging);
   update();
 };
 
@@ -66,6 +97,7 @@ const initializeBeforeAfterCarousel = (carousel) => {
 };
 
 window.initializeBeforeAfterCarousel = initializeBeforeAfterCarousel;
+window.initializeBeforeAfterSlider = initializeBeforeAfterSlider;
 
 document.querySelectorAll("[data-ba-slider]").forEach(initializeBeforeAfterSlider);
 document.querySelectorAll("[data-ba-carousel]").forEach(initializeBeforeAfterCarousel);
