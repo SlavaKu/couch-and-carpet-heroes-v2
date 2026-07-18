@@ -83,7 +83,9 @@ const renderServiceBeforeAfter = (root, items) => {
           <article class="ba-slide ${index === 0 ? "is-active" : ""}" data-service-ba-slide aria-hidden="${index === 0 ? "false" : "true"}">
               <div class="ba-slider-card">
                 <div class="ba-slider" data-service-ba-slider style="--position: 50%; --position-num: .5;">
-                <img class="ba-slider-img" src="${escapeServiceComponentText(item.afterSrc)}" alt="${escapeServiceComponentText(item.afterAlt)}" style="${serviceFramingStyle(item, "after")}"${buildResponsiveImageAttrs({ srcset: item.afterSrcset, sizes: item.sizes }, index === 0)}>
+                <div class="ba-slider-base">
+                  <img class="ba-slider-img" src="${escapeServiceComponentText(item.afterSrc)}" alt="${escapeServiceComponentText(item.afterAlt)}" style="${serviceFramingStyle(item, "after")}"${buildResponsiveImageAttrs({ srcset: item.afterSrcset, sizes: item.sizes }, index === 0)}>
+                </div>
                 <div class="ba-slider-after">
                   <img class="ba-slider-img" src="${escapeServiceComponentText(item.beforeSrc)}" alt="${escapeServiceComponentText(item.beforeAlt)}" style="${serviceFramingStyle(item, "before")}"${buildResponsiveImageAttrs({ srcset: item.beforeSrcset, sizes: item.sizes }, index === 0)}>
                 </div>

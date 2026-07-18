@@ -1095,14 +1095,28 @@ label { font-weight: 800; color: var(--navy); font-size: 14px; }
   height: 100%;
   object-fit: contain;
 }
-.ba-slider > .ba-slider-img {
-  clip-path: inset(0 0 0 var(--position));
-}
+.ba-slider-base,
 .ba-slider-after {
   position: absolute;
-  inset: 0;
-  width: var(--position);
+  top: 0;
+  bottom: 0;
   overflow: hidden;
+  border-radius: inherit;
+}
+.ba-slider-base {
+  right: 0;
+  width: calc(100% - var(--position));
+}
+.ba-slider-after {
+  left: 0;
+  width: var(--position);
+}
+.ba-slider-base .ba-slider-img {
+  left: auto;
+  right: 0;
+  width: calc(100% / (1 - var(--position-num, .5)));
+  min-width: 100%;
+  max-width: none;
 }
 .ba-slider-after .ba-slider-img {
   width: calc(100% / (var(--position-num, .5)));

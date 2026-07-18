@@ -140,7 +140,9 @@
       <article class="ba-slide ${index === 0 ? "is-active" : ""}" data-ba-slide>
         <div class="ba-slider-card">
           <div class="ba-slider" data-ba-slider style="--position: 50%; --position-num: .5;">
-            <img class="ba-slider-img" src="${escapeHtml(mediaSrc(item, "after"))}" alt="${escapeHtml(mediaAlt(item, "after"))}" loading="${index === 0 ? "eager" : "lazy"}" decoding="async" style="${framingStyle(item, "after")}">
+            <div class="ba-slider-base">
+              <img class="ba-slider-img" src="${escapeHtml(mediaSrc(item, "after"))}" alt="${escapeHtml(mediaAlt(item, "after"))}" loading="${index === 0 ? "eager" : "lazy"}" decoding="async" style="${framingStyle(item, "after")}">
+            </div>
             <div class="ba-slider-after">
               <img class="ba-slider-img" src="${escapeHtml(mediaSrc(item, "before"))}" alt="${escapeHtml(mediaAlt(item, "before"))}" loading="${index === 0 ? "eager" : "lazy"}" decoding="async" style="${framingStyle(item, "before")}">
             </div>

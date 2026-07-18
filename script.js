@@ -443,7 +443,9 @@ if (calculator) {
         <article class="ba-slide ${index === 0 ? "is-active" : ""}" data-ba-slide>
           <div class="ba-slider-card">
             <div class="ba-slider" data-ba-slider style="--position: 50%; --position-num: .5;">
-              <img class="ba-slider-img" src="${escapeCmsText(project.after_image_url)}" alt="${escapeCmsText(project.title || "After cleaning")} after cleaning" loading="${index === 0 ? "eager" : "lazy"}" decoding="async" style="${imageFramingStyle(project, "after")}"${index === 0 ? ' fetchpriority="high"' : ""}>
+              <div class="ba-slider-base">
+                <img class="ba-slider-img" src="${escapeCmsText(project.after_image_url)}" alt="${escapeCmsText(project.title || "After cleaning")} after cleaning" loading="${index === 0 ? "eager" : "lazy"}" decoding="async" style="${imageFramingStyle(project, "after")}"${index === 0 ? ' fetchpriority="high"' : ""}>
+              </div>
               <div class="ba-slider-after">
                 <img class="ba-slider-img" src="${escapeCmsText(project.before_image_url)}" alt="${escapeCmsText(project.title || "Before cleaning")} before cleaning" loading="${index === 0 ? "eager" : "lazy"}" decoding="async" style="${imageFramingStyle(project, "before")}">
               </div>
